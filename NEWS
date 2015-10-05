@@ -1,10 +1,27 @@
+mev v1.4 (Release date: )
+==============
+
+* NEW: empirical and Euclidean likelihood estimation of spectral measure
+
+
+mev v1.3 (Release date: 2015-10-05)
+==============
+
+Changes:
+
+* Extremal Dirichlet model now implemented with "ef"
+* Added Smith and asymmetric (negative) logistic model (differs from bivariate setting for aneglog, given that the later is not a valid DF according to Stephenson).
+* rmev can now return arrays for random fields on regular grids ("hr","exstud" and "smith" models).
+
+
+
 mev v1.2 (Release date: 2015-08-23)
 ==============
 
 Changes:
 
-* Added the negative bilogistic and the scaled Dirichlet models, 
-* Extremal Dirichlet model implemented with "sm" only
+* Added the negative bilogistic and the scaled Dirichlet models.
+* Extremal Dirichlet model implemented with "sm" only.
 
 mev v1.1 (Release date: 2015-08-19)
 ==============

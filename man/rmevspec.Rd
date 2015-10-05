@@ -24,7 +24,7 @@ the Brown-Resnick and extremal Student max-stable process (which generate the Hu
 
 \item{vario}{function specifying the variogram. Used only if provided in conjonction with \code{loc} and if \code{sigma} is missing}
 
-\item{loc}{\code{d} by \code{k} matrix of location, used as input in the variogram \code{vario}.}
+\item{loc}{\code{d} by \code{k} matrix of location, used as input in the variogram \code{vario} or as parameter in the Smith \code{smith} model.}
 }
 \value{
 an \code{n} by \code{d} exact sample from the corresponding multivariate extreme value model

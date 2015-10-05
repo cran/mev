@@ -123,6 +123,33 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// rPSmith
+NumericVector rPSmith(int index, arma::mat Sigma, arma::mat loc);
+RcppExport SEXP mev_rPSmith(SEXP indexSEXP, SEXP SigmaSEXP, SEXP locSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type index(indexSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type loc(locSEXP);
+    __result = Rcpp::wrap(rPSmith(index, Sigma, loc));
+    return __result;
+END_RCPP
+}
+// rPdir
+NumericVector rPdir(int d, int index, NumericVector alpha, bool irv);
+RcppExport SEXP mev_rPdir(SEXP dSEXP, SEXP indexSEXP, SEXP alphaSEXP, SEXP irvSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type index(indexSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< bool >::type irv(irvSEXP);
+    __result = Rcpp::wrap(rPdir(d, index, alpha, irv));
+    return __result;
+END_RCPP
+}
 // rlogspec
 NumericMatrix rlogspec(int n, int d, NumericVector theta);
 RcppExport SEXP mev_rlogspec(SEXP nSEXP, SEXP dSEXP, SEXP thetaSEXP) {
@@ -200,6 +227,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// rsmithspec
+NumericMatrix rsmithspec(int n, arma::mat Sigma, arma::mat loc);
+RcppExport SEXP mev_rsmithspec(SEXP nSEXP, SEXP SigmaSEXP, SEXP locSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type loc(locSEXP);
+    __result = Rcpp::wrap(rsmithspec(n, Sigma, loc));
+    return __result;
+END_RCPP
+}
 // rdirspec
 NumericMatrix rdirspec(int n, int d, NumericVector alpha, bool irv);
 RcppExport SEXP mev_rdirspec(SEXP nSEXP, SEXP dSEXP, SEXP alphaSEXP, SEXP irvSEXP) {
@@ -215,8 +255,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmevA1
-NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix Sigma);
-RcppExport SEXP mev_rmevA1(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP modelSEXP, SEXP SigmaSEXP) {
+NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc);
+RcppExport SEXP mev_rmevA1(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP modelSEXP, SEXP SigmaSEXP, SEXP locSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -225,13 +265,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type param(paramSEXP);
     Rcpp::traits::input_parameter< int >::type model(modelSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type Sigma(SigmaSEXP);
-    __result = Rcpp::wrap(rmevA1(n, d, param, model, Sigma));
+    Rcpp::traits::input_parameter< arma::mat >::type loc(locSEXP);
+    __result = Rcpp::wrap(rmevA1(n, d, param, model, Sigma, loc));
     return __result;
 END_RCPP
 }
 // rmevA2
-NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix Sigma);
-RcppExport SEXP mev_rmevA2(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP modelSEXP, SEXP SigmaSEXP) {
+NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc);
+RcppExport SEXP mev_rmevA2(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP modelSEXP, SEXP SigmaSEXP, SEXP locSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -240,13 +281,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type param(paramSEXP);
     Rcpp::traits::input_parameter< int >::type model(modelSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type Sigma(SigmaSEXP);
-    __result = Rcpp::wrap(rmevA2(n, d, param, model, Sigma));
+    Rcpp::traits::input_parameter< arma::mat >::type loc(locSEXP);
+    __result = Rcpp::wrap(rmevA2(n, d, param, model, Sigma, loc));
     return __result;
 END_RCPP
 }
 // rmevspec_cpp
-NumericMatrix rmevspec_cpp(int n, int d, NumericVector param, int model, NumericMatrix Sigma);
-RcppExport SEXP mev_rmevspec_cpp(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP modelSEXP, SEXP SigmaSEXP) {
+NumericMatrix rmevspec_cpp(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc);
+RcppExport SEXP mev_rmevspec_cpp(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP modelSEXP, SEXP SigmaSEXP, SEXP locSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -255,7 +297,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type param(paramSEXP);
     Rcpp::traits::input_parameter< int >::type model(modelSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type Sigma(SigmaSEXP);
-    __result = Rcpp::wrap(rmevspec_cpp(n, d, param, model, Sigma));
+    Rcpp::traits::input_parameter< arma::mat >::type loc(locSEXP);
+    __result = Rcpp::wrap(rmevspec_cpp(n, d, param, model, Sigma, loc));
+    return __result;
+END_RCPP
+}
+// rmevasy
+NumericMatrix rmevasy(int n, int d, NumericVector param, LogicalMatrix asym, IntegerVector ncompo, NumericMatrix Sigma, int model);
+RcppExport SEXP mev_rmevasy(SEXP nSEXP, SEXP dSEXP, SEXP paramSEXP, SEXP asymSEXP, SEXP ncompoSEXP, SEXP SigmaSEXP, SEXP modelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< LogicalMatrix >::type asym(asymSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type ncompo(ncompoSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type model(modelSEXP);
+    __result = Rcpp::wrap(rmevasy(n, d, param, asym, ncompo, Sigma, model));
     return __result;
 END_RCPP
 }

@@ -1,4 +1,4 @@
 useDynLib(mev)
 importFrom(Rcpp, evalCpp)
 exportPattern("^[[:alpha:]]+")
-export(.rmevspec_cpp, .rmevA1, .rmevA2, .rPexstud, .rPHuslerReiss, .rPneglog, .rPlog, .rPdirmix, .rPbilog, .rhrspec, .rlogspec, .rneglogspec, .rbilogspec, .rdirmixspec, .rexstudspec, .rdirspec)
+

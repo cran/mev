@@ -4,8 +4,9 @@
 \alias{rmev}
 \title{Exact simulations of multivariate extreme value distributions}
 \usage{
-rmev(n, d, param, sigma, model = c("log", "neglog", "bilog", "negbilog", "hr",
-  "xstud", "ct", "dirmix"), alg = c("ef", "sm"), weights, vario, loc)
+rmev(n, d, param, asy, sigma, model = c("log", "alog", "neglog", "aneglog",
+  "bilog", "negbilog", "hr", "xstud", "smith", "ct", "dirmix"), alg = c("ef",
+  "sm"), weights, vario, loc, grid = FALSE)
 }
 \arguments{
 \item{n}{number of observations}
@@ -15,10 +16,12 @@ rmev(n, d, param, sigma, model = c("log", "neglog", "bilog", "negbilog", "hr",
 \item{param}{parameter vector for the logistic, bilogistic, negative bilogistic and extremal Dirichlet (Coles and Tawn) model.
 Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model.}
 
+\item{asy}{list of asymmetry parameters, as in \code{\link[evd]{rmvevd}}, of \eqn{2^d-1} vectors of size corresponding to the power set of \code{d}, with sum to one constraints.}
+
 \item{sigma}{covariance matrix for Husler-Reiss and extremal Student-t distributions}
 
-\item{model}{choice between 1-parameter logistic and negative logistic, bilogistic and the extremal Dirichlet model of Coles and Tawn,
-the Brown-Resnick and extremal Student max-stable process (which generate the Husler-Reiss MEV distribution), or the Dirichlet mixture.}
+\item{model}{choice between 1-parameter logistic and negative logistic, asymmetric logistic and negative logistic, bilogistic and the extremal Dirichlet model of Coles and Tawn,
+the Brown-Resnick (which generate the Husler-Reiss MEV distribution), Smith and extremal Student max-stable process , or the Dirichlet mixture.}
 
 \item{alg}{algorithm, either simulation via extremal function or via the spectral measure. The extremal Dirichlet model is only implemented with \code{sm}.}
 
@@ -26,7 +29,9 @@ the Brown-Resnick and extremal Student max-stable process (which generate the Hu
 
 \item{vario}{function specifying the variogram. Used only if provided in conjonction with \code{loc} and if \code{sigma} is missing}
 
-\item{loc}{\code{d} by \code{k} matrix of location, used as input in the variogram \code{vario}.}
+\item{loc}{\code{d} by \code{k} matrix of location, used as input in the variogram \code{vario} or as parameter for the Smith model. If \code{grid} is \code{TRUE}, unique entries should be supplied.}
+
+\item{grid}{Logical. \code{TRUE} if the coordinates are two-dimensional grid points (spatial models).}
 }
 \value{
 an \code{n} by \code{d} exact sample from the corresponding multivariate extreme value model
@@ -40,7 +45,9 @@ Dombry, Engelke and Oesting (2015).
 The vector param differs depending on the model
 \itemize{
  \item \code{log}: one dimensional parameter greater than 1
+ \item \code{alog}: \eqn{2^d-d-1} dimensional parameter for \code{dep}. Values are recycled if needed.
  \item \code{neglog}: one dimensional positive parameter
+ \item \code{aneglog}: \eqn{2^d-d-1} dimensional parameter for \code{dep}. Values are recycled if needed.
  \item \code{bilog}: \code{d}-dimensional vector of parameters in \eqn{[0,1]}
  \item \code{negbilog}: \code{d}-dimensional vector of negative parameters
  \item \code{ct}: \code{d}-dimensional vector of positive (a)symmetry parameters. Alternatively, a \eqn{d+1}
@@ -60,6 +67,8 @@ vario <- function(x) scale*sqrt(sum(x^2))^alpha
 #grid specification
 grid.loc <- as.matrix(expand.grid(runif(4), runif(4)))
 rmev(n=100, vario=vario,loc=grid.loc, model="hr")
+#Example with a grid (generating an array)
+rmev(n=10, sigma=cbind(c(2,1),c(1,3)), loc=cbind(runif(4),runif(4)),model="smith", grid=TRUE)
 ## Example with Dirichlet mixture
 alpha.mat <- cbind(c(2,1,1),c(1,2,1),c(1,1,2))
 rmev(n=100, param=alpha.mat, weights=rep(1/3,3), model="dirmix")
@@ -69,5 +78,8 @@ Leo Belzile
 }
 \references{
 Dombry, Engelke and Oesting (2015). Exact simulation of max-stable processes, \emph{arXiv:1506.04430v1}, 1--24.
+}
+\seealso{
+\link{rmevspec}, \link[evd]{rmvevd}, \link[evd]{rbvevd}
 }
 

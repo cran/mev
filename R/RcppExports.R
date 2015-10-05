@@ -119,6 +119,33 @@ mvrnorm <- function(n, mu, Sigma) {
     .Call('mev_rPHuslerReiss', PACKAGE = 'mev', index, Sigma)
 }
 
+#' Generate from Smith model (moving maxima) \eqn{Y \sim {P_x}}, where
+#' \eqn{P_{x}} is probability of extremal function
+#'
+#' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+#' @param Sigma a positive semi-definite covariance matrix
+#' @param loc location matrix
+#'
+#' @return a \code{d}-vector from \eqn{P_x}
+.rPSmith <- function(index, Sigma, loc) {
+    .Call('mev_rPSmith', PACKAGE = 'mev', index, Sigma, loc)
+}
+
+#' Generate from extremal Dirichlet \eqn{Y \sim {P_x}}, where
+#' \eqn{P_{x}} is probability of extremal functions from the Dirichlet model of
+#' Coles and Tawn.
+#'
+#' @param d dimension of the 1-sample
+#' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+#' @param alpha a \eqn{d} dimensional vector of positive parameter values for the Dirichlet vector, or
+#' \eqn{d+1} if the last entry is the index of regular variation of the model, a constant in \code{(0, 1]}
+#' @param irv should the usual model (\code{FALSE}) or the general scaled version (\code{TRUE}) be used
+#'
+#' @return a \code{d}-vector from \eqn{P_x}
+.rPdir <- function(d, index, alpha, irv = FALSE) {
+    .Call('mev_rPdir', PACKAGE = 'mev', d, index, alpha, irv)
+}
+
 #' Generates from \eqn{Q_i}{Qi}, the spectral measure of the logistic model
 #'
 #' Simulation algorithm of Dombry et al. (2015)
@@ -204,6 +231,22 @@ mvrnorm <- function(n, mu, Sigma) {
     .Call('mev_rhrspec', PACKAGE = 'mev', n, Sigma)
 }
 
+#' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Smith model (moving maxima)
+#'
+#' Simulation algorithm of Dombry et al. (2015)
+#'
+#' @param n sample size
+#' @param Sigma \code{d}-dimensional covariance matrix
+#' @param loc location matrix
+#'
+#' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable
+#' processes, \emph{arXiv:1506.04430v1}, 1--24.
+#'
+#' @return an \code{n} by \code{d} sample from the spectral distribution
+.rsmithspec <- function(n, Sigma, loc) {
+    .Call('mev_rsmithspec', PACKAGE = 'mev', n, Sigma, loc)
+}
+
 #' Generates from \eqn{Q_i}{Qi}, the spectral measure of the extremal Dirichlet
 #' model
 #'
@@ -234,14 +277,15 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param n sample size
 #' @param d dimension of the multivariate distribution
 #' @param param a vector of parameters
-#' @param model integer, currently ranging from 1 to 4, corresponding respectively to
+#' @param model integer, currently ranging from 1 to 8, corresponding respectively to
 #' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-#' (5) \code{extstud}, (6) \code{hr} and (7) \code{ct}
-#' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+#' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
+#' @param Sigma covariance matrix for Husler-Reiss, Smith and extremal student. Default for compatibility
+#' @param loc matrix of location for Smith model.
 #'
 #' @return a \code{n} by \code{d} matrix containing the sample
-.rmevA1 <- function(n, d, param, model, Sigma) {
-    .Call('mev_rmevA1', PACKAGE = 'mev', n, d, param, model, Sigma)
+.rmevA1 <- function(n, d, param, model, Sigma, loc) {
+    .Call('mev_rmevA1', PACKAGE = 'mev', n, d, param, model, Sigma, loc)
 }
 
 #' Multivariate extreme value distribution sampling algorithm
@@ -253,14 +297,15 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param n sample size
 #' @param d dimension of the multivariate distribution
 #' @param param a vector of parameters
-#' @param model integer, currently ranging from 1 to 7, corresponding respectively to
+#' @param model integer, currently ranging from 1 to 8, corresponding respectively to
 #' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-#' (5) \code{extstud} and (6) \code{hr}.
-#' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+#' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
+#' @param Sigma covariance matrix for Husler-Reiss, Smith and extremal student. Default for compatibility
+#' @param loc matrix of location for Smith model.
 #'
 #' @return a \code{n} by \code{d} matrix containing the sample
-.rmevA2 <- function(n, d, param, model, Sigma) {
-    .Call('mev_rmevA2', PACKAGE = 'mev', n, d, param, model, Sigma)
+.rmevA2 <- function(n, d, param, model, Sigma, loc) {
+    .Call('mev_rmevA2', PACKAGE = 'mev', n, d, param, model, Sigma, loc)
 }
 
 #' Random number generator from spectral distribution
@@ -272,14 +317,36 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param param a vector of parameters
 #' @param model integer, currently ranging from 1 to 7, corresponding respectively to
 #' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-#' (5) \code{extstud}, (6) \code{hr} and (7) \code{ct}.
+#' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
 #' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+#' @param loc matrix of locations for the Smith model
 #'
 #' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable processes, \emph{arXiv:1506.04430v1}, 1--24.
 #' @references Boldi (2009). A note on the representation of parametric models for multivariate extremes. \emph{Extremes} \bold{12}, 211--218.
 #'
 #' @return a \code{n} by \code{d} matrix containing the sample
-.rmevspec_cpp <- function(n, d, param, model, Sigma) {
-    .Call('mev_rmevspec_cpp', PACKAGE = 'mev', n, d, param, model, Sigma)
+.rmevspec_cpp <- function(n, d, param, model, Sigma, loc) {
+    .Call('mev_rmevspec_cpp', PACKAGE = 'mev', n, d, param, model, Sigma, loc)
+}
+
+#' Random number generator from asymmetric logistic distribution
+#'
+#' Simulation algorithm of Stephenson (2003), using exact-samples from the logistic
+#'
+#' @param n sample size
+#' @param d dimension of the multivariate distribution
+#' @param param a vector of parameters
+#' @param asym matrix of bool indicating which component belong to the corresponding row logistic model
+#' @param ncompo number of components for the (negative) logistic in row
+#' @param Sigma matrix of asymmetry parameters
+#'
+#' @references Stephenson, A. G. (2003) Simulating multivariate extreme value distributions of logistic type.
+#' \emph{Extremes}, \bf{6}(1), 49--60.
+#' @references Joe, H. (1990). Families of min-stable multivariate exponential and multivariate
+#' extreme value distributions, \bf{9}, 75--81.
+#'
+#' @return a \code{n} by \code{d} matrix containing the sample
+.rmevasy <- function(n, d, param, asym, ncompo, Sigma, model) {
+    .Call('mev_rmevasy', PACKAGE = 'mev', n, d, param, asym, ncompo, Sigma, model)
 }
 

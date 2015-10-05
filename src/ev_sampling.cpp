@@ -111,6 +111,31 @@ arma::mat mvrnorm_arma(int n, arma::colvec Mu, arma::mat Xmat){
   return sample;
 }
 
+
+// Functions from Rcpp Gallery for calculation of multivariate Normal density
+
+arma::vec Mahalanobis(arma::mat x, arma::rowvec center, arma::mat cov){
+  int n = x.n_rows;
+  arma::mat x_cen;
+  x_cen.copy_size(x);
+  for (int i=0; i < n; i++) {
+    x_cen.row(i) = x.row(i) - center;
+  }
+  return sum((x_cen * cov.i()) % x_cen, 1);
+}
+
+arma::vec dmvnorm_arma(arma::mat x,  arma::rowvec mean,  arma::mat sigma, bool log = false) {
+  arma::vec distval = Mahalanobis(x,  mean, sigma);
+  double logdet = sum(arma::log(arma::eig_sym(sigma)));
+  double log2pi = std::log(2.0 * M_PI);
+  arma::vec logretval = -( (x.n_cols * log2pi + logdet + distval)/2  ) ;
+
+  if (log){
+    return(logretval);
+  }else {
+    return(exp(logretval));
+  }
+}
 // DISTRIBUTIONS OF EXTREMAL FUNCTION
 
 //' Generate from logistic \eqn{Y \sim {P_x}}, where
@@ -261,6 +286,75 @@ NumericVector rPHuslerReiss (int index, NumericMatrix Sigma){
 }
 
 
+//' Generate from Smith model (moving maxima) \eqn{Y \sim {P_x}}, where
+//' \eqn{P_{x}} is probability of extremal function
+//'
+//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param Sigma a positive semi-definite covariance matrix
+//' @param loc location matrix
+//'
+//' @return a \code{d}-vector from \eqn{P_x}
+//[[Rcpp::export(.rPSmith)]]
+NumericVector rPSmith (int index, arma::mat Sigma, arma::mat loc){
+  int d = loc.n_rows;
+  if(index < 0 || index >= d) Rcpp::stop("Invalid index in rPSmith");
+  arma::vec mu = arma::vec(Sigma.n_cols);
+  //arma::rowvec mut = arma::rowvec(d);
+  mu.zeros(); //mut.zeros();
+  arma::mat mvnormsamp = mvrnorm_arma(1, mu, Sigma);
+  NumericVector samp(d);
+  NumericVector constant(1);
+  constant[0] = dmvnorm_arma(mvnormsamp, mu.t(), Sigma)(0);
+  arma::mat dist(1, Sigma.n_cols);
+  for(int i = 0; i < d; i++){
+    dist.row(0) = mvnormsamp.row(0) + loc.row(i) - loc.row(index);
+    samp[i] = dmvnorm_arma(dist, mu.t(), Sigma)(0);
+  }
+  return samp/constant[0];
+}
+
+//' Generate from extremal Dirichlet \eqn{Y \sim {P_x}}, where
+//' \eqn{P_{x}} is probability of extremal functions from the Dirichlet model of
+//' Coles and Tawn.
+//'
+//' @param d dimension of the 1-sample
+//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param alpha a \eqn{d} dimensional vector of positive parameter values for the Dirichlet vector, or
+//' \eqn{d+1} if the last entry is the index of regular variation of the model, a constant in \code{(0, 1]}
+//' @param irv should the usual model (\code{FALSE}) or the general scaled version (\code{TRUE}) be used
+//'
+//' @return a \code{d}-vector from \eqn{P_x}
+//[[Rcpp::export(.rPdir)]]
+NumericVector rPdir(int d, int index, NumericVector alpha, bool irv = false){
+  NumericVector alpha_star(d);
+  if(irv==false){
+    alpha_star = clone(alpha);
+  } else{
+    for(int i=0; i<d; i++){
+      alpha_star[i]=alpha[i];
+    }
+  }
+  NumericVector sample(d);
+  if(irv==false){
+    alpha_star[index] = alpha_star[index]+1.0;
+    sample = rdir(1, alpha_star, false)(0,_);
+    for(int i=0; i<d; i++){
+      sample[i] = sample[i]/alpha[i];
+    }
+    sample = sample/sample[index];
+    return sample;
+  } else{
+    alpha_star[index] = alpha_star[index]+alpha[d];
+    sample = rdir(1, alpha_star, false)(0,_);
+    for(int i=0; i<d; i++){
+      sample[i] = exp(alpha[d]*log(sample[i])+lgamma(alpha[i])-lgamma(alpha[i]+alpha[d]));
+    }
+    sample = sample/sample[index];
+    return sample;
+  }
+}
+
+
 // SPECTRAL DISTRIBUTIONS
 
 //' Generates from \eqn{Q_i}{Qi}, the spectral measure of the logistic model
@@ -289,8 +383,6 @@ NumericMatrix rlogspec (int n, int d, NumericVector theta){
   }
   return samp;
 }
-
-
 
 
 //' Generates from \eqn{Q_i}{Qi}, the spectral measure of the negative logistic model
@@ -463,6 +555,41 @@ NumericMatrix rhrspec (int n, NumericMatrix Sigma){
   return samp;
 }
 
+
+
+//' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Smith model (moving maxima)
+//'
+//' Simulation algorithm of Dombry et al. (2015)
+//'
+//' @param n sample size
+//' @param Sigma \code{d}-dimensional covariance matrix
+//' @param loc location matrix
+//'
+//' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable
+//' processes, \emph{arXiv:1506.04430v1}, 1--24.
+//'
+//' @return an \code{n} by \code{d} sample from the spectral distribution
+// [[Rcpp::export(.rsmithspec)]]
+NumericMatrix rsmithspec(int n, arma::mat Sigma, arma::mat loc){
+  int d = loc.n_rows;
+  arma::vec mu = arma::vec(Sigma.n_cols);// b/c need constructor, then setter
+  mu.zeros();
+  NumericMatrix samp(n, d);
+  int j;
+  arma::mat mvnormsamp = mvrnorm_arma(n, mu, Sigma);
+  arma::mat dist(1, Sigma.n_cols);
+  for(int r=0; r<n; r++){
+    j = sampleone(d);
+    for(int i = 0; i < d; i++){
+      dist.row(0) = mvnormsamp.row(r) + loc.row(i) - loc.row(j);
+      samp(r,i) = dmvnorm_arma(dist, mu.t(), Sigma)(0);
+    }
+    samp(r,_) = samp(r,_)/sum(samp(r,_));
+  }
+  return samp;
+}
+
+
 //' Generates from \eqn{Q_i}{Qi}, the spectral measure of the extremal Dirichlet
 //' model
 //'
@@ -481,39 +608,83 @@ NumericMatrix rhrspec (int n, NumericMatrix Sigma){
 //' @return an \code{n} by \code{d} sample from the spectral distribution
 // [[Rcpp::export(.rdirspec)]]
 NumericMatrix rdirspec(int n, int d, NumericVector alpha, bool irv = false){
-	NumericVector alpha_star(d);
+  NumericVector alpha_star(d);
   int j;
   NumericMatrix sample(n, d);
   NumericVector m(d);
   if(irv==true){
-	   for(int i=0; i<d; i++){
-	   m[i] = -lgamma(alpha[i])+lgamma(alpha[i]+alpha[d]);
-	  	alpha_star[i]=alpha[i];
-	  }
+    for(int i=0; i<d; i++){
+      m[i] = -lgamma(alpha[i])+lgamma(alpha[i]+alpha[d]);
+      alpha_star[i]=alpha[i];
+    }
   } else{
-  alpha_star = clone(alpha);
+    alpha_star = clone(alpha);
   }
   for(int r=0; r<n; r++){
     j = sampleone(d);
     if(irv==false){
-	    alpha_star[j] = alpha_star[j]+1.0;
-	    sample(r,_) = rdir(1, alpha_star, false)(0,_);
-	    for(int i=0; i<d; i++){
-	      sample(r,i) = sample(r,i)/alpha[i];
-	    }
+      alpha_star[j] = alpha_star[j]+1.0;
+      sample(r,_) = rdir(1, alpha_star, false)(0,_);
+      for(int i=0; i<d; i++){
+        sample(r,i) = sample(r,i)/alpha[i];
+      }
     } else{
-    	alpha_star[j] += alpha[d];
-	    sample(r,_) = rdir(1, alpha_star, false)(0,_);
-	    for(int i=0; i<d; i++){
-	      sample(r,i) = exp(alpha[d]*log(sample(r,i))-m[i]);
-	    }
+      alpha_star[j] += alpha[d];
+      sample(r,_) = rdir(1, alpha_star, false)(0,_);
+      for(int i=0; i<d; i++){
+        sample(r,i) = exp(alpha[d]*log(sample(r,i))-m[i]);
+      }
     }
     alpha_star[j] = alpha[j];
     sample(r,_) = sample(r,_)/sum(sample(r,_));
-    
+
   }
   return sample;
 }
+
+// Internal function to verify confirmity for rmevA1, rmevA2, rmevspec
+
+void check_args(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc) {
+    //Model 1: logistic
+    if(model==1 && param.size()!=1){
+      Rcpp::warning("Logistic model currently only implemented for one argument");
+      //Model 2: negative logistic
+    } else  if(model==2 && param.size()!=1){
+      Rcpp::warning("Negative logistic model currently only implemented for one argument");
+      //Model 3: Dirichlet mixture
+      //Checks are performed in rmev wrapper function
+    } else if(model == 4){
+      if(param.size() != d || is_true(any(param > 1.0))){
+        Rcpp::stop("Invalid input for the bilogistic or the negative bilogistic model");
+      }
+
+      //Model 5: Extremal Student t
+    } else if(model == 5){
+      if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
+      if(param[0]<0 || param.size()!=1){
+        Rcpp::stop("Invalid degree of freedom");
+        }
+
+      //Model 6: Brown-Resnick (Husler-Reiss)
+    } else if(model == 6){
+      if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
+
+      //Model 7: Coles and Tawn (Beta-Dirichlet extremal distribution)
+    } else if(model == 7){
+      if(is_true(any(param < 0.0))){
+        Rcpp::stop("Invalid input for Dirichlet model");
+      }
+      //Model 8: Smith model (moving maxima with multivariate Gaussian)
+    } else if(model == 8){
+      //Copy entries in a vector, to use sugar (otherwise need to cast to &int)
+      if(Sigma.ncol()!=loc.n_cols){
+        Rcpp::stop("Smith model requires location matching covariance matrix");
+      }
+    }
+    if (model > 8){
+      Rcpp::stop("Model not currently implemented");
+    }
+  }
 
 
 //' Multivariate extreme value distribution sampling algorithm
@@ -526,55 +697,36 @@ NumericMatrix rdirspec(int n, int d, NumericVector alpha, bool irv = false){
 //' @param n sample size
 //' @param d dimension of the multivariate distribution
 //' @param param a vector of parameters
-//' @param model integer, currently ranging from 1 to 4, corresponding respectively to
+//' @param model integer, currently ranging from 1 to 8, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-//' (5) \code{extstud}, (6) \code{hr} and (7) \code{ct}
-//' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+//' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
+//' @param Sigma covariance matrix for Husler-Reiss, Smith and extremal student. Default for compatibility
+//' @param loc matrix of location for Smith model.
 //'
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevA1)]]
-NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix Sigma) {
-  //Sanity checks
+NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc) {
+  // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
 	bool irv = false;
-	//Model 1: logistic
-  if(model == 1 && param.size() != 1){
-    Rcpp::warning("Logistic model currently only implemented for one argument");
-  }
-  //Model 2: negative logistic
-  if(model == 2 && param.size() != 1){
-    Rcpp::warning("Negative logistic model currently only implemented for one argument");
-  }
-  //Model 3: Dirichlet mixture
-  //Model 4: bilogistic
-  if(model == 4){
-    if(param.size() != d || is_true(any(param > 1.0))){
-         Rcpp::stop("Invalid input for the bilogistic or the negative bilogistic model");
-    }
-  }
-  //Model 5: Extremal Student t
-  if(model == 5){
-    if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
-    if(param[0]<0 || param.size()!=1){Rcpp::stop("Invalid degree of freedom");}
-    //Standardize the covariance to correlation matrix (do only once)
-    arma::vec stdev = exp(0.5*log(sigma.diag()));
-    arma::mat stdevmat = inv(diagmat(stdev));
-    sigma = stdevmat * sigma * stdevmat;
-  }
-  //Model 6: Brown-Resnick (Husler-Reiss)
-  if(model == 6){
-    if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
-  }
-  //Model 7: Coles and Tawn (Beta-Dirichlet extremal distribution)
-  if(model == 7){
-    if(is_true(any(param < 0.0))){
-      Rcpp::stop("Invalid input for Dirichlet model");
-    }
-    if(param.size() == d+1){
-    	if(param[d]>1.0) Rcpp::stop("Invalid index of regular variation");
-    	irv = true;	
-    }
-  }
+	//Sanity checks
+	check_args(n, d, param, model, Sigma, loc);
+	if(model == 5){
+	  //Standardize the covariance to correlation matrix (do only once)
+	  arma::vec stdev = exp(0.5*log(sigma.diag()));
+	  arma::mat stdevmat = inv(diagmat(stdev));
+	  sigma = stdevmat * sigma * stdevmat;
+	  //Model 7: Coles and Tawn (Beta-Dirichlet extremal distribution)
+	} else if(model == 7){
+	  if(param.size() == d+1){
+	    if(param[d]>1.0) Rcpp::stop("Invalid index of regular variation");
+	    irv = true;
+	  }
+	  //Model 8: Smith model (moving maxima with multivariate Gaussian)
+	} else if(model == 8){
+	  d = loc.n_rows;
+	}
+
 
   NumericMatrix samp = NumericMatrix(n, d); //Initialized to zero
   NumericVector zeta_I(1);
@@ -582,33 +734,30 @@ NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix
   for(int i = 0; i < n; i ++){
     //For each sample of the max-stable distribution
     zeta_I[0] = rexp(1, d)[0];
-    while(1.0/zeta_I[0] > min(samp( i, _ ))){
+    while(1.0/zeta_I[0] > min(samp(i, _ ))){
       //Simulate from T and Y, or spectral density D
-      int T = sampleone(d);
       if(model == 1){
-        Y = rPlog(d, T, param);
+        Y = rlogspec(1, d, param)(0,_);
       } else if(model == 2){
-        Y = rPneglog(d, T, param);
+        Y = rneglogspec(1, d, param)(0,_);
       } else if(model == 3){
-        Y = rPdirmix(d, T, Sigma, param);
+        Y = rdirmixspec(1, d, Sigma, param)(0,_);
       } else if(model == 4){
         Y = rbilogspec(1, param)(0,_);
       } else if(model == 5){
-        Y = rPexstud(T, sigma, param);
+        Y = rexstudspec(1, sigma, param)(0,_);
       } else if(model == 6){
-        Y = rPHuslerReiss(T, Sigma);
-      } else if(model ==7){
+        Y = rhrspec(1, Sigma)(0,_);
+      } else if(model == 7){
         Y = rdirspec(1, d, param, irv)(0,_);
+      } else if(model == 8){
+        Y = rsmithspec(1, sigma, loc)(0,_);
       } else {
         Rcpp::stop("Model not yet implemented");
       }
-      // Generating from poisson point process and
+      // Generating from Poisson point process and
       // computing pointwise maxima
-      if(model == 7 || model == 4){
-        samp(i,_) = pmax(samp(i, _ ), Y/zeta_I[0]);
-      } else{
-        samp(i,_) = pmax(samp(i, _ ), Y/(sum(Y)*zeta_I[0]));
-      }
+      samp(i,_) = pmax(samp(i, _ ), Y/zeta_I[0]);
       zeta_I[0] = zeta_I[0] + rexp(1,d)[0];//Rcpp uses scale rather than rate
     }
 
@@ -626,49 +775,36 @@ NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix
 //' @param n sample size
 //' @param d dimension of the multivariate distribution
 //' @param param a vector of parameters
-//' @param model integer, currently ranging from 1 to 7, corresponding respectively to
+//' @param model integer, currently ranging from 1 to 8, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-//' (5) \code{extstud} and (6) \code{hr}.
-//' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+//' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
+//' @param Sigma covariance matrix for Husler-Reiss, Smith and extremal student. Default for compatibility
+//' @param loc matrix of location for Smith model.
 //'
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevA2)]]
-NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix Sigma) {
+NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc) {
+  // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
-	bool irv = false;
+  bool irv = false;
   //Sanity checks
-  //Model 1: logistic
-  if(model==1 && param.size()!=1){
-    Rcpp::warning("Logistic model currently only implemented for one argument");
-  }
-  //Model 2: negative logistic
-  if(model==2 && param.size()!=1){
-    Rcpp::warning("Negative logistic model currently only implemented for one argument");
-  }
-  //Model 3: Dirichlet mixture
-  //Checks are performed in rmev wrapper function
-  //Model 4: bilogistic
-  if(model == 4){
-    if(param.size() != d || is_true(any(param > 1.0))){
-      Rcpp::stop("Invalid input for the bilogistic or the negative bilogistic model");
-    }
-  }
-  //Model 5: Extremal Student t
+  check_args(n, d, param, model, Sigma, loc);
   if(model == 5){
-    if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
-    if(param[0]<0 || param.size()!=1){Rcpp::stop("Invalid degree of freedom");}
     //Standardize the covariance to correlation matrix (do only once)
     arma::vec stdev = exp(0.5*log(sigma.diag()));
     arma::mat stdevmat = inv(diagmat(stdev));
     sigma = stdevmat * sigma * stdevmat;
+    //Model 7: Coles and Tawn (Beta-Dirichlet extremal distribution)
+  } else if(model == 7){
+    if(param.size() == d+1){
+      if(param[d]>1.0) Rcpp::stop("Invalid index of regular variation");
+      irv = true;
+    }
+    //Model 8: Smith model (moving maxima with multivariate Gaussian)
+  } else if(model == 8){
+    d = loc.n_rows;
   }
-  //Model 6: Brown-Resnick (Husler-Reiss)
-  if(model == 6){
-    if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
-  }
-  if(model > 6){
-    Rcpp::stop("Model not implemented yet");
-  }
+
 
   //Define the containers
   NumericMatrix samp = NumericMatrix(n, d);
@@ -689,7 +825,11 @@ NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix
       Y = rPexstud(0, sigma, param);
     } else if(model == 6){
       Y = rPHuslerReiss(0, Sigma);
-    }  else{
+    } else if(model == 7){
+      Y = rPdir(d, 0, param, irv);
+    } else if(model == 8){
+      Y = rPSmith(0, sigma, loc);
+    } else{
       Rcpp::stop("Sampler not yet implemented with extremal functions");
     }
 
@@ -711,8 +851,11 @@ NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix
           Y = rPexstud(j, sigma, param);
         } else if(model == 6){
           Y = rPHuslerReiss(j, Sigma);
+        } else if(model == 7){
+          Y = rPdir(d, j, param, irv);
+        }  else if(model == 8){
+          Y = rPSmith(j, sigma, loc);
         }
-
         bool res = true;
         for(int k = 0; k < j; k++){ //(7) Check previous extremal functions
           //Rcpp::Rcout << "Extremal path until " << j << "has been generated, with " << k<< std::endl;
@@ -741,59 +884,39 @@ NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix
 //' @param param a vector of parameters
 //' @param model integer, currently ranging from 1 to 7, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-//' (5) \code{extstud}, (6) \code{hr} and (7) \code{ct}.
+//' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
 //' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+//' @param loc matrix of locations for the Smith model
 //'
 //' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable processes, \emph{arXiv:1506.04430v1}, 1--24.
 //' @references Boldi (2009). A note on the representation of parametric models for multivariate extremes. \emph{Extremes} \bold{12}, 211--218.
 //'
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevspec_cpp)]]
-NumericMatrix rmevspec_cpp(int n, int d, NumericVector param, int model, NumericMatrix Sigma) {
-  bool irv = false;
+NumericMatrix rmevspec_cpp(int n, int d, NumericVector param, int model, NumericMatrix Sigma, arma::mat loc) {
+  // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
-	//Sanity checks
-  //Model 1: logistic
-  if(model == 1 && param.size() != 1){
-    Rcpp::warning("Logistic model currently only implemented for one argument");
-  }
-  //Model 2: negative logistic
-  if(model == 2 && param.size() != 1){
-    Rcpp::warning("Negative logistic model currently only implemented for one argument");
-  }
-  //Model 3: Dirichlet mixture
-  //Model 4: bilogistic
-  if(model == 4){
-    if(param.size() != d || is_true(any(param > 1.0))){
-     Rcpp::stop("Invalid input for the bilogistic or the negative bilogistic model");
-    }
-  }
-  //Model 5: Extremal Student t
+  bool irv = false;
+  //Sanity checks
+  check_args(n, d, param, model, Sigma, loc);
   if(model == 5){
-    if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
-    if(param[0]<0 || param.size()!=1){Rcpp::stop("Invalid degree of freedom");}
     //Standardize the covariance to correlation matrix (do only once)
     arma::vec stdev = exp(0.5*log(sigma.diag()));
     arma::mat stdevmat = inv(diagmat(stdev));
     sigma = stdevmat * sigma * stdevmat;
-  }
-  //Model 6: Brown-Resnick (Husler-Reiss)
-  if(model == 6){
-    if(Sigma.ncol()!=Sigma.nrow()) Rcpp::stop("Provided covariance matrix is not square");
-  }
-  //Model 7: Coles and Tawn (Beta-Dirichlet extremal distribution)
-  if(model == 7){
-    if(is_true(any(param < 0.0))){
-      Rcpp::stop("Invalid input for Dirichlet model");
+    //Model 7: Coles and Tawn (Beta-Dirichlet extremal distribution)
+  } else if(model == 7){
+    if(param.size() == d+1){
+      if(param[d]>1.0) Rcpp::stop("Invalid index of regular variation");
+      irv = true;
     }
-    if(param.size()==d+1){
-    	irv = true;
-  	}
-  } else if (model>7){
-  	Rcpp::stop("Model not currently implemented");
+    //Model 8: Smith model (moving maxima with multivariate Gaussian)
+  } else if(model == 8){
+    d = loc.n_rows;
   }
+
 	//Sampling
-  
+
   NumericMatrix samp = NumericMatrix(n, d); //Initialized to zero
   if(model == 1){
     samp = rlogspec(n, d, param);
@@ -809,8 +932,63 @@ NumericMatrix rmevspec_cpp(int n, int d, NumericVector param, int model, Numeric
     samp = rhrspec(n, Sigma);
   } else if(model == 7){
     samp = rdirspec(n, d, param, irv);
+  } else if(model == 8){
+    samp = rsmithspec(n, param, loc);
   }  else{
     Rcpp::stop("Invalid model");
   }
   return samp;
 }
+
+
+
+//' Random number generator from asymmetric logistic distribution
+//'
+//' Simulation algorithm of Stephenson (2003), using exact-samples from the logistic
+//'
+//' @param n sample size
+//' @param d dimension of the multivariate distribution
+//' @param param a vector of parameters
+//' @param asym matrix of bool indicating which component belong to the corresponding row logistic model
+//' @param ncompo number of components for the (negative) logistic in row
+//' @param Sigma matrix of asymmetry parameters
+//'
+//' @references Stephenson, A. G. (2003) Simulating multivariate extreme value distributions of logistic type.
+//' \emph{Extremes}, \bf{6}(1), 49--60.
+//' @references Joe, H. (1990). Families of min-stable multivariate exponential and multivariate
+//' extreme value distributions, \bf{9}, 75--81.
+//'
+//' @return a \code{n} by \code{d} matrix containing the sample
+// [[Rcpp::export(.rmevasy)]]
+NumericMatrix rmevasy(int n, int d, NumericVector param, LogicalMatrix asym,
+                       IntegerVector ncompo, NumericMatrix Sigma, int model) {
+  if(!(model == 1 || model == 2)){
+    Rcpp::stop("Asymmetric model not implemented");
+    }
+  NumericMatrix samp(n,d);
+  IntegerVector siz = IntegerVector::create(d, Sigma.nrow());
+  //IntegerVector index = seq_len(d)-1; // can subset using index[asym(r,_)]
+  NumericMatrix nullmat;
+  int j=0;
+  //Generate point masses on the edges, if any
+  for(int i=0; i < d; i++){
+    if(param[i]!=0){
+     samp(_, j) = Sigma(j, j)/Rcpp::rexp(n,1.0);
+      j++;
+    }
+  }
+  arma::mat void_mat(1,1);
+for(int r = min(siz); r<Sigma.nrow(); r++){
+  NumericMatrix intersamp = rmevA2(n, ncompo(r), NumericVector::create(param[r]), model, nullmat, void_mat);
+  j=0;
+  for(int i=0; i < d; i++){
+    if(asym(r,i) == true){
+    samp(_, i) = pmax(samp(_, i), Sigma(r,i)*intersamp(_, j));
+    j++;
+  }
+}
+}
+return samp;
+}
+
+
