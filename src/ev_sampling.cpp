@@ -1,8 +1,6 @@
-// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
-#include "RcppArmadillo.h"
 // [[Rcpp::depends(RcppArmadillo)]]
-
-#include <RcppArmadilloExtensions/sample.h>
+# include <RcppArmadillo.h>
+# include <RcppArmadilloExtensions/sample.h>
 using namespace Rcpp;
 
 
@@ -27,7 +25,7 @@ int sampleone(int d){
 //' @param n sample size
 //' @param alpha vector of parameter
 //' @param normalize boolean. If \code{FALSE}, the function returns Gamma variates with parameter \code{alpha}.
-//'
+//' @export
 //' @return sample of dimension \code{d} (size of alpha) from the Dirichlet distribution.
 //' @examples rdir(n=100, alpha=c(0.5,0.5,2),TRUE)
 //' rdir(n=100, alpha=c(3,1,2),FALSE)
@@ -55,7 +53,7 @@ NumericMatrix rdir(int n, NumericVector alpha, bool normalize = true){
 //' @param mu mean vector. Will set the dimension
 //' @param Sigma a square covariance matrix, of same dimension as \code{mu}.
 //' No sanity check is performed to validate that the matrix is p.s.d., so use at own risk
-//'
+//' @export
 //' @return an \code{n} sample from a multivariate Normal distribution
 //' @examples
 //' mvrnorm(n=10, mu=c(0,2), Sigma=diag(2))
@@ -64,50 +62,64 @@ NumericMatrix mvrnorm(int n, NumericVector mu, NumericMatrix Sigma){
   if (Sigma.nrow()!=Sigma.ncol() || mu.size()!=Sigma.ncol()){
     Rcpp::stop("Incompatible arguments - mvrnorm");
   }
-  int length=Sigma.nrow();
-  arma::colvec Mu(mu.begin(),length,false);
+  int length = Sigma.nrow();
+  arma::rowvec Mu(mu.begin(), length, false);
   arma::mat Xmat(Sigma.begin(), length, length, false);
-  arma::mat q = arma::randn(length,arma::as_scalar(n));
+ 	//Cholesky decomposition fix
+// arma::mat Y = arma::randn(n, Sigma.ncol());
+//	arma::mat sample = Y * arma::chol(Xmat);
+//	sample.each_row() += Mu;
+  arma::mat q = arma::randn(arma::as_scalar(n),length);
   arma::colvec eigval;
   arma::mat eigvec;
   //Covariance matrix must be symmetric - otherwise eig_sym throws error
   arma::eig_sym(eigval, eigvec, Xmat);
   arma::mat sample(n,length);
-  arma::colvec intermed(length);
-  for(int t=0;t<n;t++){
-    intermed= eigvec*arma::diagmat(arma::sqrt(eigval))*q.col(t)+Mu;
-    for(int i=0;i<length;i++){
-      sample(t,i)=intermed(i);
-    }
-  }
+  sample = q*eigvec*arma::diagmat(arma::sqrt(eigval));
+  sample.each_row() += Mu;
+// arma::colvec intermed(length);
+// for(int t=0;t<n;t++){
+//     intermed = eigvec*arma::diagmat(arma::sqrt(eigval))*q.col(t)+Mu;
+//     for(int i=0;i<length;i++){
+//       sample(t,i)=intermed(i);
+//     }
+//   }
   return Rcpp::as<Rcpp::NumericMatrix>(wrap(sample));
 }
 //' Multivariate Normal distribution sampler (Rcpp version), derived using the eigendecomposition
 //' of the covariance matrix Sigma. The function utilizes the arma random normal generator
 //'
 //' @param n sample size
-//' @param mu mean vector. Will set the dimension
-//' @param Sigma covariance matrix, of same dimension as mu (and square matrix).
-//' No sanity check is performed to validate that the matrix is p.s.d., so use at own risk
+//' @param Mu mean vector. Will set the dimension
+//' @param Xmat covariance matrix, of same dimension as \code{Mu} (and square matrix).
+//' No sanity check is performed to validate that the matrix is symmetric, so use at own risk
 //'
 //' @return an n sample from a multivariate Normal distribution
 //'
 // [[Rcpp::export(.mvrnorm_arma)]]
 arma::mat mvrnorm_arma(int n, arma::colvec Mu, arma::mat Xmat){
+	// Cholesky decomposition -  
+	// arma::mat Y = arma::randn(n, Xmat.n_cols);
+	// arma::mat samp = Y * arma::chol(Xmat);
+	// samp.each_row() += Mu.t();
+	// 	return samp;	
   int length = Xmat.n_rows;
-  arma::mat q = arma::randn(length,arma::as_scalar(n));
+  //Covariance matrix must be symmetric - otherwise eig_sym throws error
+  arma::mat q = arma::randn(arma::as_scalar(n),length);
   arma::colvec eigval;
   arma::mat eigvec;
   //Covariance matrix must be symmetric - otherwise eig_sym throws error
   arma::eig_sym(eigval, eigvec, Xmat);
   arma::mat sample(n,length);
-  arma::colvec intermed(length);
-  for(int t=0;t<n;t++){
-    intermed= eigvec*arma::diagmat(arma::sqrt(eigval))*q.col(t)+Mu;
-    for(int i=0;i<length;i++){
-      sample(t,i)=intermed(i);
-    }
-  }
+  sample = q*eigvec*arma::diagmat(arma::sqrt(eigval));
+  sample.each_row() += Mu.t();
+//   arma::colvec intermed(length);
+//   for(int t=0;t<n;t++){
+//     intermed= eigvec*arma::diagmat(arma::sqrt(eigval))*q.col(t)+Mu;
+//     for(int i=0;i<length;i++){
+//       sample(t,i)=intermed(i);
+//     }
+//   }
   return sample;
 }
 
@@ -152,7 +164,7 @@ NumericVector rPlog (int d, int index, NumericVector theta){
     Rcpp::stop("Invalid value for the logistic model");
   }
   double shape = theta[0];
-  double scale = 1/tgamma(1.0-1.0/theta[0]);
+  // double scale = 1/tgamma(1.0-1.0/theta[0]);
   NumericVector F(d);
   NumericVector F0(1);
   F0[0] = exp(-log(rgamma(1,1.0-1.0/theta[0],1.0)[0])/theta[0]);
@@ -243,7 +255,7 @@ NumericVector rPbilog(int d, int index, NumericVector alpha){
 //' @return a \code{d}-vector from \eqn{P_x}
 // [[Rcpp::export(.rPexstud)]]
 NumericVector rPexstud (int index, arma::mat sigma, NumericVector al){
-  if(al[0]<0 || index<0 || index >= sigma.n_cols) Rcpp::stop("Invalid argument in rPexstud");
+  if(al[0]<0 || index<0 || (unsigned) index >= sigma.n_cols) Rcpp::stop("Invalid argument in rPexstud");
   arma::vec zeromean = arma::vec(sigma.n_cols-1);// b/c need constructor, then setter
   zeromean.zeros(); // set elements of vector to zero
   arma::mat Covar = (sigma - sigma.col(index) * sigma.row(index))/(al[0]+1.0);
@@ -371,7 +383,7 @@ NumericVector rPdir(int d, int index, NumericVector alpha, bool irv = false){
 //[[Rcpp::export(.rlogspec)]]
 NumericMatrix rlogspec (int n, int d, NumericVector theta){
   double shape = theta[0];
-  double scale = 1/tgamma(1.0-1.0/theta[0]);
+  // double scale = 1/tgamma(1.0-1.0/theta[0]);
   //Define containers
   NumericMatrix samp(n,d);
   int j;
@@ -677,7 +689,7 @@ void check_args(int n, int d, NumericVector param, int model, NumericMatrix Sigm
       //Model 8: Smith model (moving maxima with multivariate Gaussian)
     } else if(model == 8){
       //Copy entries in a vector, to use sugar (otherwise need to cast to &int)
-      if(Sigma.ncol()!=loc.n_cols){
+      if((unsigned) Sigma.ncol()!= loc.n_cols){
         Rcpp::stop("Smith model requires location matching covariance matrix");
       }
     }
@@ -732,6 +744,9 @@ NumericMatrix rmevA1(int n, int d, NumericVector param, int model, NumericMatrix
   NumericVector zeta_I(1);
   NumericVector Y(d);
   for(int i = 0; i < n; i ++){
+  	if(i%100==0){
+  		Rcpp::checkUserInterrupt();
+  	}
     //For each sample of the max-stable distribution
     zeta_I[0] = rexp(1, d)[0];
     while(1.0/zeta_I[0] > min(samp(i, _ ))){
@@ -811,6 +826,9 @@ NumericMatrix rmevA2(int n, int d, NumericVector param, int model, NumericMatrix
   NumericVector zeta_I(1);
   NumericVector Y(d);
   for(int i = 0; i < n; i ++){
+  	if(i%100==0){
+  		Rcpp::checkUserInterrupt();
+  	}
     //For each sample of the max-stable distribution
     zeta_I[0] = rexp(1, 1)[0];   //(1) Initial sample
     if(model == 1){

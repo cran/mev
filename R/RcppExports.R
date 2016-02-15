@@ -10,7 +10,7 @@
 #' @param n sample size
 #' @param alpha vector of parameter
 #' @param normalize boolean. If \code{FALSE}, the function returns Gamma variates with parameter \code{alpha}.
-#'
+#' @export
 #' @return sample of dimension \code{d} (size of alpha) from the Dirichlet distribution.
 #' @examples rdir(n=100, alpha=c(0.5,0.5,2),TRUE)
 #' rdir(n=100, alpha=c(3,1,2),FALSE)
@@ -27,7 +27,7 @@ rdir <- function(n, alpha, normalize = TRUE) {
 #' @param mu mean vector. Will set the dimension
 #' @param Sigma a square covariance matrix, of same dimension as \code{mu}.
 #' No sanity check is performed to validate that the matrix is p.s.d., so use at own risk
-#'
+#' @export
 #' @return an \code{n} sample from a multivariate Normal distribution
 #' @examples
 #' mvrnorm(n=10, mu=c(0,2), Sigma=diag(2))
@@ -39,9 +39,9 @@ mvrnorm <- function(n, mu, Sigma) {
 #' of the covariance matrix Sigma. The function utilizes the arma random normal generator
 #'
 #' @param n sample size
-#' @param mu mean vector. Will set the dimension
-#' @param Sigma covariance matrix, of same dimension as mu (and square matrix).
-#' No sanity check is performed to validate that the matrix is p.s.d., so use at own risk
+#' @param Mu mean vector. Will set the dimension
+#' @param Xmat covariance matrix, of same dimension as \code{Mu} (and square matrix).
+#' No sanity check is performed to validate that the matrix is symmetric, so use at own risk
 #'
 #' @return an n sample from a multivariate Normal distribution
 #'

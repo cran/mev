@@ -12,12 +12,12 @@
 #'@param asy list of asymmetry parameters, as in \code{\link[evd]{rmvevd}}, of \eqn{2^d-1} vectors of size corresponding to the power set of \code{d}, with sum to one constraints.
 #'@param alg algorithm, either simulation via extremal function or via the spectral measure. The extremal Dirichlet model is only implemented with \code{sm}.
 #'@param model choice between 1-parameter logistic and negative logistic, asymmetric logistic and negative logistic, bilogistic and the extremal Dirichlet model of Coles and Tawn,
-#' the Brown-Resnick (which generate the Husler-Reiss MEV distribution), Smith and extremal Student max-stable process , or the Dirichlet mixture.
+#' the Brown-Resnick (which generate the Husler-Reiss MEV distribution), Smith, Schlather and extremal Student max-stable process , or the Dirichlet mixture.
 #'@param vario function specifying the variogram. Used only if provided in conjonction with \code{loc} and if \code{sigma} is missing
 #'@param loc \code{d} by \code{k} matrix of location, used as input in the variogram \code{vario} or as parameter for the Smith model. If \code{grid} is \code{TRUE}, unique entries should be supplied.
 #'@param weights vector of length \code{m} for the \code{m} mixture components. Must sum to one
 #'@param grid Logical. \code{TRUE} if the coordinates are two-dimensional grid points (spatial models).
-#'
+#'@param ... additional arguments for the \code{vario} function
 #'@author Leo Belzile
 #'@details The vector param differs depending on the model
 #' \itemize{
@@ -28,11 +28,17 @@
 #'  \item \code{bilog}: \code{d}-dimensional vector of parameters in \eqn{[0,1]}
 #'  \item \code{negbilog}: \code{d}-dimensional vector of negative parameters
 #'  \item \code{ct}: \code{d}-dimensional vector of positive (a)symmetry parameters. Alternatively, a \eqn{d+1}
-#'  vector consisting of the \code{d} Dirichlet parameters and the last entry is an index of regular variation in \code{(0, 1]} treated as scale
+#'  vector consisting of the \code{d} Dirichlet parameters and the last entry is an index of regular variation in \eqn{(0, 1]} treated as scale
 #'  \item \code{xstud}: one dimensional parameter corresponding to degrees of freedom \code{alpha}
 #'  \item \code{dirmix}: \code{d} by \code{m}-dimensional matrix of positive (a)symmetry parameters
 #' }
+#'
+#' Stephenson points out that the multivariate asymmetric negative logistic model is not a valid distribution function.
+#' The implementation in \code{mev} uses the same construction as the asymmetric logistic distribution,
+#' and as such it does not match the bivariate implementation.
 #'@return an \code{n} by \code{d} exact sample from the corresponding multivariate extreme value model
+#'
+#'@export
 #'@references
 #'Dombry, Engelke and Oesting (2015). Exact simulation of max-stable processes, \emph{arXiv:1506.04430v1}, 1--24.
 #'@seealso \link{rmevspec}, \link[evd]{rmvevd}, \link[evd]{rbvevd}
@@ -53,8 +59,8 @@
 #'alpha.mat <- cbind(c(2,1,1),c(1,2,1),c(1,1,2))
 #'rmev(n=100, param=alpha.mat, weights=rep(1/3,3), model="dirmix")
 rmev <-function(n, d, param, asy, sigma,
-                model= c("log","alog","neglog","aneglog","bilog","negbilog","hr","xstud","smith","ct","dirmix"),
-                alg=c("ef","sm"), weights, vario, loc, grid=FALSE){
+                model= c("log","alog","neglog","aneglog","bilog","negbilog","hr","xstud","smith","schlather","ct","dirmix"),
+                alg=c("ef","sm"), weights, vario, loc, grid=FALSE, ...){
   #Create gridded values if specification is for random field discretization
   if(!missing(loc)){
     if(ncol(loc)==1) grid=FALSE
@@ -76,7 +82,11 @@ rmev <-function(n, d, param, asy, sigma,
       asym <- matrix(TRUE, ncol=1,nrow=1)
     }
   }
-
+	if(model == "schlather"){
+		if(!missing(param)) warning("Parameter value (degrees of freedom) set to one for Schlather model")
+		param <- 1;
+		model <- "xstud"
+	}
   #Define model families
   m1 <- c("log","neglog")
   m2 <- c("bilog","negbilog","ct")
@@ -125,16 +135,18 @@ rmev <-function(n, d, param, asy, sigma,
       if(!is.matrix(loc)) loc <- matrix(loc, ncol=1)
       stopifnot(is.function(vario))
       sigma <- sapply(1:nrow(loc), function(i) sapply(1:nrow(loc), function(j)
-        vario(loc[i,]) + vario(loc[j,]) - vario(loc[i,]-loc[j,])))
+        vario(loc[i,], ...) + vario(loc[j,], ...) - vario(loc[i,]-loc[j,], ...)))
     }
-
+		if(model=="xstud"){
+			sigma <- cov2cor(sigma)
+		}
     if(missing(sigma) || ncol(sigma)!=nrow(sigma)) stop("Invalid covariance matrix")
     if(any(diag(sigma)<=0)) stop("Degenerate covariance matrix; negative or zero entries found")
     if(model=="xstud" && any(diag(sigma)!=1)) warning("Extremal student requires correlation matrix")
     if(model=="xstud" && (missing(param) || length(param)!=1)) stop("Degrees of freedom argument missing or invalid")
     if(model=="smith" && missing(loc)) stop("Location should be provided for the Smith model")
     if(model=="smith" && ncol(as.matrix(loc))!=ncol(sigma)){
-      stop("Smith model should have location same size as covariance matrix")
+      stop("Covariance matrix of the Smith model should be of the same dimension as dimension of location vector")
     }
     d <- switch(model,
                 xstud = ncol(sigma),
@@ -199,8 +211,11 @@ rmev <-function(n, d, param, asy, sigma,
       stop("Dimension of `d' and provided `param' do not match")
     }
     #Checking for the mean constraints
-    mar_mean <- colSums(t(param)/ colSums(param)*weights)-1/d
-    if(any(mar_mean!=0)) stop("Invalid mixture components")
+    mar_mean <- colSums(t(param)/ colSums(param)*weights)
+    if(! isTRUE(all.equal(mar_mean, rep(1/d,d),
+          tolerance = .Machine$double.eps ^ 0.5))){
+        	stop("Invalid mixture components")
+    }
     #Switching parameters around to pass them to Rcpp function
     sigma <- param
     param <- weights
@@ -216,11 +231,15 @@ rmev <-function(n, d, param, asy, sigma,
       locat <- loc
     }
     if(model %in% m3 && grid==TRUE){
+      npdim <- d^(1/ncol(loc))
+      if(!all.equal(npdim, as.integer(npdim))){
+       stop("The dimension of the input grid does not match (square) covariance matrix")
+      }
       ncompo <- c(1)
       array(t(switch(alg,
              ef=.rmevA2(n=n, d=d, param=param, model=mod,  Sigma=sigma, locat),
              sm=.rmevA1(n=n, d=d, param=param, model=mod,  Sigma=sigma, locat)
-        )), dim=c(rep(d^(1/ncol(loc)),n))
+        )), dim=c(rep(npdim,ncol(loc)),n)
       )
     } else{
       ncompo <- c(1)
@@ -249,6 +268,7 @@ rmev <-function(n, d, param, asy, sigma,
 #'@param vario function specifying the variogram. Used only if provided in conjonction with \code{loc} and if \code{sigma} is missing
 #'@param loc \code{d} by \code{k} matrix of location, used as input in the variogram \code{vario} or as parameter in the Smith \code{smith} model.
 #'@param weights vector of length \code{m} for the \code{m} mixture components. Must sum to one
+#'@param ... additional arguments for the \code{vario} function
 #'
 #'@author Leo Belzile
 #'@details The vector param differs depending on the model
@@ -258,7 +278,7 @@ rmev <-function(n, d, param, asy, sigma,
 #'  \item \code{bilog}: \code{d}-dimensional vector of parameters in \eqn{[0,1]}
 #'  \item \code{negbilog}: \code{d}-dimensional vector of negative parameters
 #'  \item \code{ct}: \code{d}-dimensional vector of positive (a)symmetry parameters. Alternatively, a \eqn{d+1}
-#'  vector consisting of the \code{d} Dirichlet parameters and the last entry is an index of regular variation in \code{(0, 1]} treated as scale
+#'  vector consisting of the \code{d} Dirichlet parameters and the last entry is an index of regular variation in \eqn{(0, 1]} treated as scale
 #'  \item \code{xstud}: one dimensional parameter corresponding to degrees of freedom \code{alpha}
 #'  \item \code{dirmix}: \code{d} by \code{m}-dimensional matrix of positive (a)symmetry parameters
 #' }
@@ -285,9 +305,10 @@ rmev <-function(n, d, param, asy, sigma,
 #'## Example with Dirichlet mixture
 #'alpha.mat <- cbind(c(2,1,1),c(1,2,1),c(1,1,2))
 #'rmevspec(n=100, param=alpha.mat, weights=rep(1/3,3), model="dirmix")
+#'@export
 rmevspec <-function(n, d, param, sigma,
                     model=c("log","neglog","bilog","negbilog","hr","xstud","ct","dirmix"),
-                    weights, vario, loc){
+                    weights, vario, loc,...){
   if(!missing(param) && mode(param) != "numeric") stop("Invalid parameter")
   model <- match.arg(model)
   m1 <- c("log","neglog")
@@ -332,8 +353,11 @@ rmevspec <-function(n, d, param, sigma,
       if(!is.matrix(loc)) loc <- matrix(loc, ncol=1)
       stopifnot(is.function(vario))
       sigma <- sapply(1:nrow(loc), function(i) sapply(1:nrow(loc), function(j)
-        vario(loc[i,]) + vario(loc[j,]) - vario(loc[i,]-loc[j,])))
+        vario(loc[i,],...) + vario(loc[j,],...) - vario(loc[i,]-loc[j,],...)))
     }
+  	if(model=="xstud"){
+			sigma <- cov2cor(sigma)
+		}
     d <- ncol(sigma)
     if(missing(sigma) || ncol(sigma)!=nrow(sigma)) stop("Invalid covariance matrix")
     if(any(diag(sigma)<=0)) stop("Degenerate covariance matrix; negative or zero entries found")
@@ -360,8 +384,11 @@ rmevspec <-function(n, d, param, sigma,
       stop("Dimension of d and provided param do not match")
     }
     #Checking for the mean constraints
-    mar_mean <- colSums(t(param)/ colSums(param)*weights)-1/d
-    if(any(mar_mean!=0)) stop("Invalid mixture components")
+    mar_mean <- colSums(t(param)/ colSums(param)*weights)
+    if(! isTRUE(all.equal(mar_mean, rep(1/d,d),
+          tolerance = .Machine$double.eps ^ 0.5))){
+        	stop("Invalid mixture components")
+    }
     #Switching parameters around to pass them to Rcpp function
     sigma <- param
     param <- weights
@@ -431,3 +458,6 @@ rmevspec <-function(n, d, param, sigma,
         stop("`asy' does not satisfy the appropriate constraints")
       asy
 }
+
+
+
