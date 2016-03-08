@@ -7,7 +7,7 @@
 #'@param n number of observations
 #'@param d dimension of sample
 #'@param param parameter vector for the logistic, bilogistic, negative bilogistic and extremal Dirichlet (Coles and Tawn) model.
-#' Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model.
+#' Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model. See \bold{Details}.
 #'@param sigma covariance matrix for Husler-Reiss and extremal Student-t distributions
 #'@param asy list of asymmetry parameters, as in \code{\link[evd]{rmvevd}}, of \eqn{2^d-1} vectors of size corresponding to the power set of \code{d}, with sum to one constraints.
 #'@param alg algorithm, either simulation via extremal function or via the spectral measure. The extremal Dirichlet model is only implemented with \code{sm}.

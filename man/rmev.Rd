@@ -14,7 +14,7 @@ rmev(n, d, param, asy, sigma, model = c("log", "alog", "neglog", "aneglog",
 \item{d}{dimension of sample}
 
 \item{param}{parameter vector for the logistic, bilogistic, negative bilogistic and extremal Dirichlet (Coles and Tawn) model.
-Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model.}
+Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model. See \bold{Details}.}
 
 \item{asy}{list of asymmetry parameters, as in \code{\link[evd]{rmvevd}}, of \eqn{2^d-1} vectors of size corresponding to the power set of \code{d}, with sum to one constraints.}
 

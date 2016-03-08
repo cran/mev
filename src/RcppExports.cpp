@@ -6,6 +6,35 @@
 
 using namespace Rcpp;
 
+// EuclideanWeights
+arma::vec EuclideanWeights(arma::mat x, arma::rowvec mu);
+RcppExport SEXP mev_EuclideanWeights(SEXP xSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::rowvec >::type mu(muSEXP);
+    __result = Rcpp::wrap(EuclideanWeights(x, mu));
+    return __result;
+END_RCPP
+}
+// emplik
+List emplik(arma::mat z, arma::colvec mu, arma::vec lam, double eps, double M, double thresh, int itermax);
+RcppExport SEXP mev_emplik(SEXP zSEXP, SEXP muSEXP, SEXP lamSEXP, SEXP epsSEXP, SEXP MSEXP, SEXP threshSEXP, SEXP itermaxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::mat >::type z(zSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< double >::type M(MSEXP);
+    Rcpp::traits::input_parameter< double >::type thresh(threshSEXP);
+    Rcpp::traits::input_parameter< int >::type itermax(itermaxSEXP);
+    __result = Rcpp::wrap(emplik(z, mu, lam, eps, M, thresh, itermax));
+    return __result;
+END_RCPP
+}
 // rdir
 NumericMatrix rdir(int n, NumericVector alpha, bool normalize);
 RcppExport SEXP mev_rdir(SEXP nSEXP, SEXP alphaSEXP, SEXP normalizeSEXP) {
@@ -316,6 +345,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type Sigma(SigmaSEXP);
     Rcpp::traits::input_parameter< int >::type model(modelSEXP);
     __result = Rcpp::wrap(rmevasy(n, d, param, asym, ncompo, Sigma, model));
+    return __result;
+END_RCPP
+}
+// Zhang_Stephens
+List Zhang_Stephens(NumericVector x, NumericVector init, NumericVector adapt_sd, bool adapt, int burnin, int niter, int thin, int method);
+RcppExport SEXP mev_Zhang_Stephens(SEXP xSEXP, SEXP initSEXP, SEXP adapt_sdSEXP, SEXP adaptSEXP, SEXP burninSEXP, SEXP niterSEXP, SEXP thinSEXP, SEXP methodSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type init(initSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type adapt_sd(adapt_sdSEXP);
+    Rcpp::traits::input_parameter< bool >::type adapt(adaptSEXP);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
+    Rcpp::traits::input_parameter< int >::type thin(thinSEXP);
+    Rcpp::traits::input_parameter< int >::type method(methodSEXP);
+    __result = Rcpp::wrap(Zhang_Stephens(x, init, adapt_sd, adapt, burnin, niter, thin, method));
     return __result;
 END_RCPP
 }

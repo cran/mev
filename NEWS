@@ -1,15 +1,24 @@
-mev v1.5 (Release date: )
+mev v1.6 (Release date: 2016-03-08)
 ==============
 
-* NEW: empirical and Euclidean likelihood estimation of spectral measure
+New:
+*Empirical and Euclidean likelihood estimation of spectral measure
+Changes: 
+*gp.fit ample changes to the function, in particular a fix for the printing method, handling of errors and inclusion of the Zhang (2010) method and MCMC algorithm for the latter. This function is still preliminary and may updated in the nearby future to include further possibilities.
 
-mev v1.4 (Release date: )
+mev v1.5 (Release date: 2016-02-16)
 ==============
 
-* FIX: fixed error simulation on grids
-* FIX: check for marginal mean constraint for the Dirichlet mixture now has tolerance
-* NEW: Wadsworth (2015) Technometrics's proposal for threshold selection based on NHPP superposition
-* NEW: Northrop & Coleman diagnostic (2014) Extremes for shape equality and p-value path
+New: 
+* Wadsworth (2015) Technometrics's proposal for threshold selection based on NHPP superposition
+* Northrop & Coleman diagnostic (2014) Extremes for shape equality and p-value path
+
+mev v1.4 (not on CRAN)
+==============
+Changes:
+
+* fixed error simulation on grids
+* check for marginal mean constraint for the Dirichlet mixture now has tolerance
 
 mev v1.3 (Release date: 2015-10-05)
 ==============

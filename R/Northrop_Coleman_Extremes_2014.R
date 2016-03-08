@@ -3,7 +3,6 @@
 # Northrop, Paul J and Claire L Coleman (2014), Extremes
 # "Improved threshold diagnostic plots for extreme value analyses"
 #
-# Code by P.J. Northrop
 #######################################################################################################
 #------------------------------------------------------------------------------#
 #                             Main function                                    #
@@ -24,10 +23,12 @@
 #'                to evaluate score vectors, expected Fisher information matrices, Hessians
 #'
 #' @details The default method is \code{"Grimshaw"} using the reduction of the parameters to a one-dimensional
-#' maximization. Other options are \code{"1D.nlm"}, using the \code{nlm} function, and \code{"1D.optim"}
-#' that uses \code{optim}. Two-dimensional optimisation using 2D-optimization \code{\link[ismev]{ismev}} using the routine
+#' maximization. Other options are one-dimensional maximization of the profile the \code{nlm} function or \code{optim}.
+#' Two-dimensional optimisation using 2D-optimization \code{\link[ismev]{ismev}} using the routine
 #' from \code{gpd.fit} from the \code{ismev} library, with the addition of the algebraic gradient.
-#' The choice of \code{GP.fit} should make no difference but the options were kept.
+#' The choice of \code{GP.fit} should make no difference but the options were kept. \bold{Warning}: the function is not robust
+#' and will not recover from failure of the maximization routine, returning various error messages.
+#'
 #'
 #' @references Grimshaw (1993). Computing Maximum Likelihood Estimates for the Generalized
 #'  Pareto Distribution, \emph{Technometrics}, \bold{35}(2), 185--191.
@@ -45,7 +46,7 @@
 #' u <- quantile(rain, seq(0.85,0.99,by=0.01))
 #' NC.diag(rain, u, size=0.05)
 #' }
-NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
+NC.diag <- function(x, u, GP.fit = c("Grimshaw", "nlm", "optim", "ismev"),
 			do.LRT = FALSE, size = NULL, my.xlab = NULL, xi.tol = 1e-3) {
 		if (any(diff(u) <= 0)) {
 			warning("Thresholds supplied in u are not in increasing order")
@@ -55,7 +56,7 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		#------------------------------------------------------------------------------#
 		# 1. Fit GP distribution to excesses of u[i], i=1, ..., n_u                      #
 		#------------------------------------------------------------------------------#
-		GP.fit <-	match.arg(arg = GP.fit, choices = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"))
+		GP.fit <-	match.arg(arg = GP.fit, choices = c("Grimshaw", "nlm", "optim", "ismev"))
 		z <- list()                 # list to store the results
 		z$thresh <- u               # all thresholds
 		z$nexc <-	unlist(lapply(u, function(y) {
@@ -65,16 +66,16 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		# sample sizes between thresholds (and above the highest threshold)
 		for (i in 1:n_u) {
 			# loop over all thresholds
-			if (GP.fit == "1D.nlm") {
+			if (GP.fit == "nlm") {
 				temp <-	.gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol, calc.se = F) # threshold u[j1], 1D max, algebraic Hessian
 				phi.init <-	temp$mle[2] / temp$mle[1] # better initial estimate of phi
 				temp <-	.GP_1D_fit_nlm(x, u[i], init.val = phi.init, gradtol = 1e-20, steptol = 1e-20, calc.se = F)
 				# 1D max, use nlm to get gradients v close to zero
 			} else if (GP.fit == "ismev") {
 				temp <-	.gpd_2D_fit(x, u[i], show = F) # threshold u[i], ismev GP fitting function
-				temp <-	.gpd_2D_fit(x, u[i], show = F, siginit = temp$mle[1], shinit = temp$mle[2], method = "BFGS", reltol =							1e-30, abstol = 1e-30)
-			} else if (GP.fit == "1D.optim") {
-				temp <-	.gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol) # threshold u[i], 1D max, algebraic Hessian
+				temp <-	.gpd_2D_fit(x, u[i], show = F, siginit = temp$mle[1], shinit = temp$mle[2], method = "BFGS", reltol =	1e-30, abstol = 1e-30)
+			} else if (GP.fit == "optim") {
+				temp <-	.gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol)					# threshold u[i], 1D max, algebraic Hessian
 				temp <-	.gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol, phi.input = temp$mle[2] / temp$mle[1], reltol = 1e-30, abstol = 1e-30) # threshold u[i], 1D max, algebraic Hessian
 			} else if (GP.fit == "Grimshaw") {
 				yy <- x[x > u[i]] - u[i] # thresholds excesses
@@ -150,17 +151,17 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 					# y: excesses of threshold
 					sigma1 <- sig[1] # sigma_1
 					if (sigma1 <= 0)
-						return(10^10) # Need sigma_1 > 0
+						return(1e30) # Need sigma_1 > 0
 					xi <-	sig[-1]   # (xi_1, ..., xi_m)
 					sigma <- sigma1 + cumsum(c(0, xi[-m] * w[-m]))  # (sigma_1, ..., sigma_m)
 					phi <-	xi / sigma     # (phi_1, ..., phi_m)
 					if (any(1 + phi[-m] * w[-m] <= 0)){
-						return(10^10)        # Need all elements of 1+phi*w/sigma > 0
+						return(1e30)        # Need all elements of 1+phi*w/sigma > 0
 					}
 					Ij <-	unlist(lapply(y, function(sig){
 							sum(sig - v > 0)})) # interval indicators
 					if (any(1 + phi[Ij] * (y - v[Ij]) <= 0))
-						return(10^10)    # Need all elements of 1+phi[Ij]*(y-v[Ij]) > 0
+						return(1e30)    # Need all elements of 1+phi[Ij]*(y-v[Ij]) > 0
 					aj <-	c(0, cumsum(log(1 + phi[-m] * w[-m]) / sigma[-m] / phi[-m])) # -log(p_j), j=1, ..., m
 					pj <-	exp(-aj)    # P(Y > v_j), j=1, ..., m
 					bj <- log(sigma)
@@ -554,10 +555,10 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 
 		if (is.null(sigl)) {
 			sigmat <- as.matrix(rep(1, length(xdatu)))
-			if (is.null(siginit))
+			if (is.null(siginit)){
 				siginit <- in2
 		}
-		else {
+		} else {
 			z$trans <- TRUE
 			sigmat <- cbind(rep(1, length(xdatu)), ydat[xind, sigl])
 			if (is.null(siginit))
@@ -565,10 +566,8 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		}
 		if (is.null(shl)) {
 			shmat <- as.matrix(rep(1, length(xdatu)))
-			if (is.null(shinit))
-				shinit <- 0.1
-		}
-		else {
+			if (is.null(shinit)) 	shinit <- 0.1
+		} else {
 			z$trans <- TRUE
 			shmat <- cbind(rep(1, length(xdatu)), ydat[xind, shl])
 			if (is.null(shinit))
@@ -590,11 +589,11 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 			}
 			zz <- 1 + phi * ex.data
 			if (min(zz) <= 0)
-				return(10^10)
+				return(1e30)
 			xi.of.phi <- mean(log(zz))
 			sigma.of.phi <- xi.of.phi / phi
 			if (sigma.of.phi <= 0)
-				return(10^10)
+				return(1e30)
 			k * log(sigma.of.phi) + (1 + 1 / xi.of.phi) * sum(log(1 + phi * ex.data))
 		}#................................# end of GP.1D.negloglik()
 		#
@@ -607,21 +606,28 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 			- n / phi + (1 + 1 / xi.phi) * sum(ex.data / yy)
 		}
 		#
-		if (!is.null(phi.input))
-			phi.init <- phi.input
-		temp <- 	optim(phi.init, GP.1D.negloglik, gr = gp.1D.grad, hessian = FALSE, method = method,
+		if (!is.null(phi.input)){	phi.init <- phi.input}
+		temp <- 	try(optim(phi.init, GP.1D.negloglik, gr = gp.1D.grad, hessian = FALSE, method = method,
 				control = list(maxit = maxit, ...)
-			)
+			))
+		if(is.character(temp)){
+		 z$conv <- 50
+		 return(z);
+		}
 		phi <- temp$par
 		zz <- 1 + phi * (xdatu - u)
+		if (min(zz) <= 0){
+				z$conv <- 50
+				return(z)
+		}
 		xi <- mean(log(zz))
 		sc <- xi / phi
 		z$mle <- c(sc, xi)
 		#
 		if (calc.se) {
-			if (abs(xi) >= xi.tol)
+			if (abs(xi) >= xi.tol && xi > -0.5)
 				z$cov <- solve(.gpd_obs_info(scale=sc, shape=xi, data=xdatu - u))
-			if (abs(xi) < xi.tol) {
+			if (abs(xi) < xi.tol  && xi > -0.5) {
 				delta <- 2 * xi.tol # evaluate observed information at xi+delta and xi-delta
 				o.info1 <- .gpd_obs_info(scale=sc, shape=xi + delta, data=xdatu - u)
 				o.info2 <- .gpd_obs_info(scale=sc, shape=xi - delta, data=xdatu - u)
@@ -634,8 +640,9 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		z$nllh <- temp$value
 		z$vals <- cbind(sc, xi, u)
 		z$rate <- length(xdatu) / n
-		if (calc.se)
-			z$se <- sqrt(diag(z$cov))
+		if (calc.se){
+		#	z$se <- tryCatch(sqrt(diag(z$cov)), error = function(e) NULL)
+		}
 		z$n <- n
 		z$npy <- npy
 		z$xdata <- xdat
@@ -645,7 +652,7 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		z$mle.t <-	c(z$mle[1] - z$mle[2] * uu, z$mle[2]) # sigma-xi*u replaces sigma
 
 		if (calc.se) {
-			d <-	matrix(c(1, -uu, 0, 1), 2, 2, byrow = T)       # derviatives of sigma-xi*u and xi
+			d <-	matrix(c(1, -uu, 0, 1), 2, 2, byrow = T)       # derivatives of sigma-xi*u and xi
 			v <- d %*% z$cov %*% t(d)                   # new VC matrix
 			z$cov.t <- v
 			z$se.t <- sqrt(diag(z$cov.t))               # new SEs
@@ -667,7 +674,7 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 #' @param loc optional location parameter, corresponding to threshold
 #'
 #' @author Paul J. Northrop and Claire L. Coleman
-#'
+#' @export
 #' @return the observed information matrix
 .gpd_obs_info <- function(data, scale, shape, loc=NULL) {
 	y <- data
@@ -683,17 +690,32 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 				1 / x) * y^2 / (s + x * y)^2)
 	i
 }
+#Expected information based covariance matrix (Smith 1984)
+gpd.vcov.mat <- function(data, scale, shape, loc=NULL){
+		y <- data
+	if(!is.null(loc)){
+		y <- y - loc
+	}
+	info <- matrix(NA, 2, 2)
+	info[1, 1] <- 1/scale^2
+	info[1, 2] <- exp(-log(scale)-log(1+shape))
+	info[2, 1] <- info[1, 2]
+	info[2, 2] <- 2/(1+shape)
+	info*scale^2*(1+shape)^2
+}
+
+
 
 #------------------------------------------------------------------------------#
 #               Fit GP(sigma, xi) distribution using 2D optimisation           #
 #------------------------------------------------------------------------------#
 
 # Stolen from ismev; gradient function added.
-
+#' @export
 .gpd_2D_fit <-	function (xdat, threshold, npy = 365, ydat = NULL, sigl = NULL,
 		shl = NULL, siglink = identity, shlink = identity, siginit = NULL,
 		shinit = NULL, show = TRUE, method = "Nelder-Mead", maxit = 10000, do.fscale =
-			F, do.pscale = F, ...) {
+			FALSE, do.pscale = FALSE, ...) {
 		z <- list()
 		npsc <- length(sigl) + 1
 		npsh <- length(shl) + 1
@@ -760,14 +782,23 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 			y <- xdatu - u
 			n <- length(y)
 			yy <- 1 + xi * y / sigma
-			s1 <- -n * sigma^(-1) + (1 + xi) * sigma^(-2) * sum(y / yy)
+						s1 <- -n * sigma^(-1) + (1 + xi) * sigma^(-2) * sum(y / yy)
+			if(any(yy<0)){ #TODO FIX WHETHER THIS MAKES SENSE
+				-c(s1,1e30)
+				} else{
 			s2 <- xi^(-2) * sum(log(yy)) - (1 + 1 / xi) * sigma^(-1) * sum(y / yy)
 			- c(s1, s2)
+				}
 		}
 		#
-		x <- optim(init, gpd.lik, gr = gp.grad, hessian = TRUE, method = method,
+		x <- try(optim(init, gpd.lik, gr = gp.grad, hessian = TRUE, method = method,
 				control = list(maxit = maxit, ...)
 			)
+		)
+		if(is.character(x)){
+		  z$conv <- 50
+		  return(z)
+		}
 		sc <- siglink(sigmat %*% (x$par[seq(1, length = npsc)]))
 		xi <- shlink(shmat %*% (x$par[seq(npsc + 1, length = npsh)]))
 		z$conv <- x$convergence
@@ -781,8 +812,8 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		}
 		z$mle <- x$par
 		z$rate <- length(xdatu) / n
-		z$cov <- solve(x$hessian)
-		z$se <- sqrt(diag(z$cov))
+		z$cov <- tryCatch(solve(x$hessian), error = function(e){matrix(NA, ncol(x$hessian),ncol(x$hessian))}) #TODO fix this
+		z$se <- suppressWarnings(sqrt(diag(z$cov)))
 		z$n <- n
 		z$npy <- npy
 		z$xdata <- xdat
@@ -817,11 +848,11 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 			}
 			zz <- 1 + phi * ex.data
 			if (min(zz) <= 0)
-				return(10^10)
+				return(1e30)
 			xi.of.phi <- mean(log(zz))
 			sigma.of.phi <- xi.of.phi / phi
 			if (sigma.of.phi <= 0)
-				return(10^10)
+				return(1e30)
 			neg.log.lik <- 	k * log(sigma.of.phi) + (1 + 1 / xi.of.phi) * sum(log(1 + phi * ex.data))
 			#
 			attr(neg.log.lik, "gradient") <-	-k / phi + (1 + 1 / xi.of.phi) * sum(ex.data / zz)
@@ -1330,7 +1361,7 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "1D.nlm", "1D.optim", "ismev"),
 		conv <- 0
 		#  label(a, 'GPD mle of a')
 	} else{
-		conv <- 1
+		conv <- 50
 		#  No Maximum Likelihood Estimators were found.
 		k <- NA
 		a <- NA
@@ -1357,7 +1388,32 @@ function(x) {# x: sample data from the GPD
   list(mle = mle)
 }
 
-
+".Zhang_posterior" <- function(x) {
+  n <- length(x) ;
+  x <- sort(x)
+  lx <- function(b, x) {
+    k <- -mean(log(1-b*x))
+    if (b==0){
+      k-1-log(mean(x))
+    } else{
+      k-1+log(b/k)
+    }
+  }
+  p <- (3:9)/10 ; xp <- x[round(n*(1-p)+.5)]
+  m <- 20+round(n^.5) ;
+  xq <- x[round(n*(1-p*p)+.5)]
+  k <- log(xq/xp-1,p) ; a <- k*xp/(1-p^k)
+  a[k==0] <- (-xp/log(p))[k==0] ;
+  k <- -1
+  b <- w <- L <- (n-1)/(n+1)/x[n]-(1-((1:m-.5)/m)^k)/k/median(a)/2
+  L <- sapply(1:m, function(i) n*lx(b[i],x))
+  w <- sapply(1:m, function(i) 1/sum(exp(L-L[i])))
+  b <- sum(b*w)
+  k <- -mean(log(1-b*x))
+  mle <- c(k/b, -k)
+  names(mle) <- c("scale", "shape")
+  list(mle = mle)
+}
 
 
 
@@ -1367,32 +1423,63 @@ function(x) {# x: sample data from the GPD
 #' high threshold.
 #'
 #' @param xdat a numeric vector of data to be fitted.
-#' @param threshold The chosen threshold.
-#' @param show Logical; if \code{TRUE} (the default), print details of the fit.
-#' @param method The method to be used. See Details??. Can be abbreviated.
-#'
+#' @param threshold the chosen threshold.
+#' @param show logical; if \code{TRUE} (the default), print details of the fit.
+#' @param method the method to be used. See \bold{Details}. Can be abbreviated.
+#' @param MCMC \code{NULL} for frequentist estimates, otherwise a boolean or a list with parameters passed. If \code{TRUE}, runs a Metropolis-Hastings sampler to get posterior mean estimates. Can be used to pass arguments \code{niter}, \code{burnin} and \code{thin} to the sampler as a list.
 #' @seealso \code{\link[evd]{fpot}} and \code{\link[ismev]{gpd.fit}}
 #'
-#' @details The default method is \code{"Grimshaw"} using the reduction of the parameters to a one-dimensional
-#' maximization suggested in Davison (1984). Other options are \code{\link[stats]{nlm}} function, which performs the maximization using the \code{nlm} function, and \code{"1D.optim"}
-#' that uses \code{\link[stats]{optim}}. Two-dimensional optimisation using \code{"ismev"} using the routine
-#' from \code{\link[ismev]{gpd.fit}} from the \code{\link[ismev]{ismev}} library, with the addition of the algebraic gradient.
+#' @details The default method is \code{"Grimshaw"}, consisting in maximization of the profile likelihood for the scale.
+#' Other options for maximization of the profile likelihood are \code{nlm} and \code{optim}, which use respectively \code{\link[stats]{nlm}} and \code{\link[stats]{optim}}. Method \code{"ismev"} is the two-dimensional optimization routine \code{\link[ismev]{gpd.fit}} from the \code{\link[ismev]{ismev}} library, with in addition the algebraic gradient.
+#' The approximate Bayesian methods (\code{"zs"} and \code{"zhang"}) are extracted respectively from Zhang and Stephens (2009) and Zhang (2010) and consists of a approximate posterior mean calculated via importance
+#' sampling assuming a GPD prior is placed on the parameter of the profile likelihood.
+#' @note Some of the internal functions (which are hidden from the user) allow for modelling of the parameters using covariates. This is not currently implemented within \code{gp.fit}, but users can call internal functions should they wish to use these features. \bold{Warning}
+#' @author Paul J. Northrop and Claire L. Coleman for the frequentist functions.
+#' Zhang and Stephens (2009) and Zhang (2010) for the \code{zs} and \code{zhang} approximate methods and L. Belzile for the wrapper and MCMC samplers.
 #'
-#' @author Paul J. Northrop and Claire L. Coleman
-#' @return If \code{method="bayes"}, a vector containing the posterior scale and shape parameters.
-#' Otherwise, a list containing the following components:
+#' @references Davison, A.C. (1984). Modelling excesses over high thresholds, with an application, in
+#' \emph{Statistical extremes and applications}, J. Tiago de Oliveira (editor), D. Reidel Publishing Co., 461--482.
+#' @references Grimshaw, S.D. (1993). Computing Maximum Likelihood Estimates for the Generalized
+#'  Pareto Distribution, \emph{Technometrics}, \bold{35}(2), 185--191.
+#' @references Northrop, P.J. and C. L. Coleman (2014). Improved threshold diagnostic plots for extreme value
+#' analyses, \emph{Extremes}, \bold{17}(2), 289--303.
+#' @references Zhang, J. (2010). Improving on estimation for the generalized Pareto distribution, \emph{Technometrics} \bold{52}(3), 335--339.
+#' @references Zhang, J.  and M.A. Stephens (2009). A new and efficient estimation method for the generalized Pareto distribution.
+#' \emph{Technometrics} \bold{51}(3), 316--325.
+#'
+#'
+#' @return If \code{method} is neither \code{"zs"} nor \code{"zhang"}, a list containing the following components:
 #' \itemize{
-#' \item \code{estimate} A vector containing all parameters (optimized and fixed).
-#' \item \code{std.err} A vector containing the standard errors.
-#' \item \code{var.cov} The variance covariance matrix, obtained as the numerical inverse of the observed information matrix.
-#' \item \code{threshold} The threshold.
-#' \item \code{method} The method used to fit the parameter. See details.
-#' \item \code{deviance} The deviance at the maximum likelihood estimates.
-#' \item \code{nat} Number of points lying above the threshold.
-#' \item \code{pat} Proportion of points lying above the threshold.
-#' \item \code{convergence} Components taken from the list returned by \code{\link[stats]{optim}}.
-#' \item \code{counts} Components taken from the list returned by \code{\link[stats]{optim}}.
+#' \item \code{estimate} a vector containing all parameters (optimized and fixed).
+#' \item \code{std.err} a vector containing the standard errors.
+#' \item \code{var.cov} the variance covariance matrix, obtained as the numerical inverse of the observed information matrix.
+#' \item \code{threshold} the threshold.
+#' \item \code{method} the method used to fit the parameter. See details.
+#' \item \code{deviance} the deviance at the maximum likelihood estimates.
+#' \item \code{nat} number of points lying above the threshold.
+#' \item \code{pat} proportion of points lying above the threshold.
+#' \item \code{convergence} components taken from the list returned by \code{\link[stats]{optim}}.
+#' Values other than \code{0} indicate that the algorithm likely did not converge (in particular 1 and 50).
+#' \item \code{counts} components taken from the list returned by \code{\link[stats]{optim}}.
 #' }
+#' Otherwise, a list containing
+#' \itemize{
+#' \item \code{threshold} the threshold.
+#' \item \code{method} the method used to fit the parameter. See \bold{Details}.
+#' \item \code{nat} number of points lying above the threshold.
+#' \item \code{pat} proportion of points lying above the threshold.
+#' \item \code{approx.mean} a vector containing containing the approximate posterior mean estimates.
+#' }
+#' and in addition if MCMC is neither \code{FALSE}, nor \code{NULL}
+#' \itemize{
+#' \item \code{post.mean} a vector containing the posterior mean estimates.
+#' \item \code{post.se} a vector containing the posterior standard error estimates.
+#' \item \code{accept.rate} proportion of points lying above the threshold.
+#' \item \code{niter} length of resulting Markov Chain
+#' \item \code{burnin} amount of discarded iterations at start, capped at 10000.
+#' \item \code{thin} thinning integer parameter describing
+#' }
+#'
 #' @export
 #'
 #' @examples
@@ -1400,41 +1487,100 @@ function(x) {# x: sample data from the GPD
 #' data(rain)
 #' threshold <- quantile(rain,0.9)
 #' gp.fit(rain, threshold, method="Grimshaw")
-"gp.fit" <- function(xdat, threshold, method=c("Grimshaw","nlm","optim","ismev","bayes"), show=TRUE){
+#' gp.fit(rain, threshold, method="zs")
+gp.fit <- function(xdat, threshold, method=c("Grimshaw","nlm","optim","ismev","zs","zhang"), show=TRUE, MCMC=NULL){
 	xi.tol = 1e-3
 	#Optimization of model, depending on routine
 	method <- match.arg(method)
+	if(!is.null(MCMC) && ! method %in% c("zs","zhang")) warning("Ignoring argument `MCMC` for frequentist estimation")
 	if(missing(method)){
 		method="Grimshaw"
 	}
 				if (method == "nlm") {
-				temp <-	.gpd_1D_fit(xdat, threshold, show = F, xi.tol = xi.tol, calc.se = F) # threshold u[j1], 1D max, algebraic Hessian
-				phi.init <-	temp$mle[2] / temp$mle[1] # better initial estimate of phi
-				temp <-	.GP_1D_fit_nlm(xdat, threshold, init.val = phi.init, gradtol = 1e-20, steptol = 1e-20, calc.se = F)
-				if(temp$conv == 1){#algorithm failed to converge
-					warning("Algorithm did not converge. Switching method")
-					method <- "Grimshaw"
+				temp <-	.gpd_1D_fit(xdat, threshold, show = F, xi.tol = xi.tol, calc.se = FALSE) # threshold 1D max, algebraic Hessian
+				#If algorithm failed to converge with initial values, switch to Grimshaw
+				if(temp$conv != 0 || !any(is.nan(temp$mle))){ #algorithm
+					warning("Algorithm did not converge. Switching method to Grimshaw")
+					#if( temp$mle[1] < 0 || temp$mle[2]>10 || temp$mle[2]<3 TODO fix
+				  temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
+				  temp$mle <- c(temp$a, -temp$k)
+				  #If values are numeric, but the algorithm diverged
+				} else if (is.numeric(temp$mle) && !is.nan(temp$mle)){
+					if( temp$mle[1] < 0 || temp$mle[2]>10 || temp$mle[2]<3){
+						temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
+				  temp$mle <- c(temp$a, -temp$k)
+					}
 				}
+				temp <-	.GP_1D_fit_nlm(xdat, threshold, init.val = temp$mle[2] / temp$mle[1], gradtol = 1e-20, steptol = 1e-20, calc.se = FALSE)
+
 				# 1D max, use nlm to get gradients v close to zero
 			} else if (method == "ismev") {
-				temp <-	.gpd_2D_fit(xdat, threshold, show = F) # threshold threshold, ismev GP fitting function
-				temp <-	.gpd_2D_fit(xdat, threshold, show = F, siginit = temp$mle[1], shinit = temp$mle[2], method = "BFGS", reltol =							1e-30, abstol = 1e-30)
-			} else if (method == "optim") {
-				temp <-	.gpd_1D_fit(xdat, threshold, show = F, xi.tol = xi.tol) # threshold threshold, 1D max, algebraic Hessian
-				temp <-	.gpd_1D_fit(xdat, threshold, show = F, xi.tol = xi.tol, phi.input = temp$mle[2] / temp$mle[1], reltol = 1e-30, abstol = 1e-30) # threshold threshold, 1D max, algebraic Hessian
-			} else if (method=="bayes") {
-				temp <- .Zhang_Stephens_posterior(xdat-threshold)
-				if(show){
-		cat("\nThreshold:", round(threshold, digits=3), "\n")
-    cat("Number Above:", sum(xdat > threshold), "\n")
-    cat("Proportion Above:", round(sum(xdat > threshold) / length(xdat), digits=3), "\n")
-
-    cat("\nPosterior Estimates\n")
-    print.default(format(temp$mle, digits = 3), print.gap = 2,
-        quote = FALSE)
+				temp <-	.gpd_2D_fit(xdat, threshold, show = FALSE) # ismev GP fitting function
+				if(temp$conv != 0){#algorithm failed to converge
+				  warning("Algorithm did not converge. Switching method to Grimshaw")
+				  temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
+				  temp$mle <- c(temp$a, -temp$k)
 				}
-				return(invisible(temp$mle))
-			}
+				temp <-	.gpd_2D_fit(xdat, threshold, show = FALSE, siginit = temp$mle[1], shinit = temp$mle[2],
+				                    method = "BFGS", reltol = 1e-30, abstol = 1e-30)
+			} else if (method == "optim") {
+				temp <-	.gpd_1D_fit(xdat, threshold, show = FALSE, xi.tol = xi.tol) # 1D max, algebraic Hessian
+				if(temp$conv != 0){#algorithm failed to converge
+				  warning("Algorithm did not converge. Switching method to Grimshaw")
+				  temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
+				  temp$mle <- c(temp$a, -temp$k)
+				}
+				temp <-	.gpd_1D_fit(xdat, threshold, show = FALSE, xi.tol = xi.tol, phi.input = temp$mle[2] / temp$mle[1],
+				                    reltol = 1e-30, abstol = 1e-30) #1D max, algebraic Hessian
+			} else if (method=="zs" || method=="zhang") {
+			  xdat = xdat[xdat > threshold]-threshold
+				temp <- switch(method,
+				            zs = .Zhang_Stephens_posterior(xdat),
+				            zhang = .Zhang_posterior(xdat)
+				)
+				if(!is.null(MCMC) && MCMC!=FALSE){
+				if(is.logical(MCMC) && !is.na(MCMC) && MCMC){ #if TRUE
+						burn = 2000; thin = 1; niter= 10000
+					} else if(is.list(MCMC)){
+						burn <- ifelse(is.null(MCMC$burnin),2000,MCMC$burnin)
+						thin <- ifelse(is.null(MCMC$thin),1,MCMC$thin)
+						niter <- ifelse(is.null(MCMC$niter),10000,MCMC$niter)
+					}
+				bayespost <- switch(method,
+				                  zs = Zhang_Stephens(xdat, init=-temp$mle[2]/temp$mle[1], burnin=burn, thin=thin,
+				                  										niter=niter, method=1),
+				                  zhang = Zhang_Stephens(xdat, init=-temp$mle[2]/temp$mle[1], burnin=burn,
+				                  											 thin=thin, niter=niter, method=2)
+				)
+				#Copying output for formatting and printing
+				post.mean <- bayespost$summary[1,]
+				post.se <- sqrt(bayespost$summary[2,])
+				names(post.mean) <- names(post.se) <- c("scale","shape")
+				post <- structure(list(
+					method = method,
+					threshold = threshold,
+					nat = sum(xdat > threshold),
+					pat=sum(xdat > threshold) / length(xdat),
+					approx.mean = temp$mle,
+					post.mean = post.mean,
+					post.se = post.se,
+					accept.rate = bayespost$rate,
+					thin = bayespost$thin,
+					burnin=bayespost$burnin,
+					niter=bayespost$niter), class="gpdbayes")
+
+				} else{
+					post <- structure(list(
+						method = method,
+						threshold = threshold,
+						nat = sum(xdat > threshold),
+						pat=sum(xdat > threshold) / length(xdat),
+						approx.mean = temp$mle), class="gpdbayes")
+
+				}
+				if(show) print(post)
+			return(invisible(post))
+     }
 		if (method == "Grimshaw") {
 				yy <- xdat[xdat > threshold] - threshold # thresholds excesses
 				pjn <-	.gpd_grimshaw(yy)  # Grimshaw (1993) function, note: k is -xi, a is sigma
@@ -1448,9 +1594,21 @@ function(x) {# x: sample data from the GPD
 
 
 		#Collecting observations from temp and formatting the output
-		invobsinfomat <- solve(.gpd_obs_info(data=xdat[xdat>threshold], scale=temp$mle[1],
-																shape=temp$mle[2], loc=threshold))
+	invobsinfomat <- tryCatch(solve(.gpd_obs_info(data=xdat[xdat>threshold], scale=temp$mle[1],
+																shape=temp$mle[2], loc=threshold)), error= function(e){"notinvert"}, warning= function(w) w)
+
+		if(invobsinfomat =="notinvert" || all(is.nan(invobsinfomat))){
+			warning("Cannot calculate standard error based on observed information")
+			if(!is.null(temp$se)){std.errors <- diag(temp$se)} else{std.errors <- diag(rep(NA,2))}
+		} else if(!is.null(temp$mle) && temp$mle[2] > -0.5 && temp$conv==0){#If the MLE was returned
 		std.errors <- sqrt(diag(invobsinfomat))
+		} else{
+			warning("Cannot calculate standard error based on observed information")
+			std.errors <- rep(NaN, 2)
+		}
+		if(temp$mle[2] < -1 && temp$conv == 0){
+			warning("The MLE is not a solution to the score equation for `xi < -1'")
+		}
 		names(temp$mle) <- names(std.errors) <- c("scale","shape")
 		output <- structure(list(threshold = threshold,
 				estimate = temp$mle,
@@ -1465,7 +1623,7 @@ function(x) {# x: sample data from the GPD
 				counts = temp$counts
 			), class = "gpd")
 		if(show){
-			UseMethod("print")
+			print(output)
 		}
 			invisible(output)
 }
@@ -1488,7 +1646,7 @@ function(x) {# x: sample data from the GPD
     cat("\nEstimates\n")
     print.default(format(x$estimate, digits = digits), print.gap = 2,
         quote = FALSE,...)
-    if(!is.null(x$std.err)) {
+    if(!is.null(x$std.err) && x$estimate[1] > -0.5) {
     cat("\nStandard Errors\n")
     print.default(format(x$std.err, digits = digits), print.gap = 2,
         quote = FALSE,...)
@@ -1502,4 +1660,31 @@ function(x) {# x: sample data from the GPD
     cat("\n")
     }
     invisible(x)
+}
+
+# #' @param x A fitted object of class \code{gpdbayes}.
+# #' @param digits Number of digits to display in \code{print} call.
+# #' @param ... Additional argument passed to \code{print}.
+# #' @rdname gp.fit
+# #' @S3method print gpdbayes
+# #' @exportMethods
+#' @export
+"print.gpdbayes" <-  function(x, digits = max(3, getOption("digits") - 3), ...){
+	cat("\nMethod:", switch(x$method,zs="Zhang and Stephens",zhang="Zhang"), "\n")
+	cat("\nThreshold:", round(x$threshold, digits), "\n")
+	cat("Number Above:", x$nat, "\n")
+	cat("Proportion Above:", round(x$pat, digits), "\n")
+
+cat("\nApproximate posterior mean estimates\n")
+print.default(format(x$approx.mean, digits = 3), print.gap = 2, quote = FALSE)
+if(!is.null(x$post.mean)){
+	cat("\nPosterior mean estimates\n")
+	print.default(format(x$post.mean, digits = 3), print.gap = 2, quote = FALSE)
+	cat("\nMonte Carlo standard errors\n")
+	print.default(format(x$post.se, digits = 3), print.gap = 2, quote = FALSE)
+	cat("\nEstimates based on an adaptive MCMC\n Runs:   ",x$niter,
+			"\n Burnin: ", x$burnin,"\n Acceptance rate:",
+			round(x$accept.rate,digits=2),"\n Thinning:",x$thin, "\n")
+
+}
 }

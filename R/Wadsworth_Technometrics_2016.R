@@ -6,29 +6,29 @@
 # Code by J.L. Wadsworth
 #######################################################################################################
 
-#' Wadsworth's univariate and bivariate exponential threshold diagnostic
+#' Wadsworth's univariate and bivariate exponential threshold diagnostics
 #'
 #' Function to produce diagnostic plots and test statistics for the
 #' threshold diagnostics exploiting structure of maximum likelihood estimators
 #' based on the non-homogeneous Poisson process likelihood
 #'
-#' @param xdat A numeric vector of data to be fitted.
-#' @param model String specifying whether the univariate or bivariate diagnostic should be used. Either \code{nhpp}
+#' @param xdat a numeric vector of data to be fitted.
+#' @param model string specifying whether the univariate or bivariate diagnostic should be used. Either \code{nhpp}
 #' for the univariate model, \code{exp} (\code{invexp}) for the bivariate exponential model with rate (inverse rate) parametrization. See details.
-#' @param u Optional; vector of candidate thresholds.
-#' @param k Number of thresholds to consider (if \code{u} unspecified).
-#' @param q1 Lowest quantile for the threshold sequence.
-#' @param q2 Upper quantile limit for the threshold sequence (\code{q2} itself is not used as a threshold,
+#' @param u optional; vector of candidate thresholds.
+#' @param k number of thresholds to consider (if \code{u} unspecified).
+#' @param q1 lowest quantile for the threshold sequence.
+#' @param q2 upper quantile limit for the threshold sequence (\code{q2} itself is not used as a threshold,
 #'  but rather the uppermost threshold will be at the \eqn{(q_2-1/k)}{q2-1/k} quantile).
-#' @param par Parameters of the NHPP likelihood. If \code{missing}, the \code{\link[evd]{fpot}} routine will be run to obtain values
-#' @param M Number of superpositions or "blocks" / "years" the process corresponds to (can affect the optimization)
-#' @param nbs Number of simulations used to assess the null distribution of the LRT, and produce the p-value
-#' @param alpha Significance level of the LRT
-#' @param plots Which plots to produce; \code{LRT}= likelihood ratio test, \code{WN} = white noise, \code{PS} = parameter stability
-#' @param UseQuantiles Logical; use quantiles as the thresholds in the plot?
-#' @param pmar Vector of length 4 giving the arguments for the plot margins in \code{par(mar=c(*,*,*,*))}.
-#' @param tikz Logical; if \code{TRUE}, axis labels are replaced with \code{LaTeX} code
-#' @param ... Additional parameters passed to \code{plot}.
+#' @param par parameters of the NHPP likelihood. If \code{missing}, the \code{\link[evd]{fpot}} routine will be run to obtain values
+#' @param M number of superpositions or "blocks" / "years" the process corresponds to (can affect the optimization)
+#' @param nbs number of simulations used to assess the null distribution of the LRT, and produce the p-value
+#' @param alpha significance level of the LRT
+#' @param plots vector of strings indicating which plots to produce; \code{LRT}= likelihood ratio test, \code{WN} = white noise, \code{PS} = parameter stability
+#' @param UseQuantiles logical; use quantiles as the thresholds in the plot?
+#' @param pmar vector of length 4 giving the arguments for the plot margins in \code{par(mar=c(*,*,*,*))}.
+#' @param tikz logical; if \code{TRUE}, axis labels are replaced with \code{LaTeX} code
+#' @param ... additional parameters passed to \code{plot}.
 #'
 #' @details The function is a wrapper for the univariate (non-homogeneous Poisson process model) and bivariate exponential dependence model.
 #' For the latter, the user can select either the rate or inverse rate parameter  (the inverse rate parametrization  works better for uniformity
@@ -38,17 +38,18 @@
 #' exponentially distributed margins or provide a \code{n} times 2 matrix with the original data, which
 #' is transformed to exponential margins using the empirical distribution function.
 #'
+#' @references Wadsworth, J.L. (2016). Exploiting Structure of Maximum Likelihood Estimators for Extreme Value Threshold Selection, \emph{Technometrics}, \bold{58}(1), 116-126, \code{http://dx.doi.org/10.1080/00401706.2014.998345}.
 #' @author Jennifer L. Wadsworth
 #' @return plots of the requested diagnostics and a list with components
 #' \itemize{
-#' \item MLE  Maximum likelihood estimates from all thresholds
-#' \item Cov  Joint asymptotic covariance matrix for \eqn{\xi}{xi}, \eqn{\eta}{eta} or \eqn{\eta^{-1}}{1/eta}.
-#' \item WN  Values of the white noise process.
-#' \item LRT Values of the likelihood ratio test statistic vs threshold.
-#' \item pval P-value of the likelihood ratio test.
-#' \item k  Final number of thresholds used.
-#' \item thresh Threshold selected by the likelihood ratio procedure.
-#' \item mle.u Maximum likelihood estimates from selected threshold.
+#' \item \code{MLE}  maximum likelihood estimates from all thresholds
+#' \item \code{Cov}  joint asymptotic covariance matrix for \eqn{\xi}{xi}, \eqn{\eta}{eta} or \eqn{\eta^{-1}}{1/eta}.
+#' \item \code{WN}  values of the white noise process.
+#' \item \code{LRT} values of the likelihood ratio test statistic vs threshold.
+#' \item \code{pval} P-value of the likelihood ratio test.
+#' \item \code{k}  final number of thresholds used.
+#' \item \code{thresh} threshold selected by the likelihood ratio procedure.
+#' \item \code{mle.u} maximum likelihood estimates from selected threshold.
 #' }
 #' @examples
 #' \dontrun{
