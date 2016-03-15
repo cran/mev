@@ -1,3 +1,21 @@
+##  Copyright (C) 2015-2016 Leo Belzile
+##
+##  This file is part of the "mev" package for R.  This program
+##  is free software; you can redistribute it and/or modify it under the
+##  terms of the GNU General Public License as published by the Free
+##  Software Foundation; either version 2 of the License, or (at your
+##  option) any later version.
+##
+##  This library is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+##
+##  You should have received a copy of the GNU General Public License
+##  along with this program; if not, write to the Free Software
+##  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+##  MA 02111-1307 USA or look up the web page
+##  http://www.gnu.org/copyleft/gpl.html.
 #' Exact simulations of multivariate extreme value distributions
 #'
 #' Implementation of the random number generators for multivariate extreme-value distributions
@@ -35,7 +53,15 @@
 #'
 #' Stephenson points out that the multivariate asymmetric negative logistic model is not a valid distribution function.
 #' The implementation in \code{mev} uses the same construction as the asymmetric logistic distribution,
-#' and as such it does not match the bivariate implementation.
+#' and as such it does not match the bivariate implementation of \link[evd]{rbvevd}.
+#'
+#' The dependence parameter of the \code{evd} package for the Husler-Reiss distribution can be recovered taking
+#' \eqn{2/r=\sqrt(2\gamma(h))} where \eqn{h} is the lag vector between sites, or else if \code{sigma} is supplied,
+#' or else via \eqn{2/r=\sqrt(2(1-\rho))}{2/r=(2(1-\code{cor}))^(1/2)} where \eqn{\rho}{cor} is the entry in the correlation matrix
+#' between the pair of variables of interest.
+#'
+#'
+#'
 #'@return an \code{n} by \code{d} exact sample from the corresponding multivariate extreme value model
 #'
 #'@export

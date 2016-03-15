@@ -39,6 +39,7 @@
 #' is transformed to exponential margins using the empirical distribution function.
 #'
 #' @references Wadsworth, J.L. (2016). Exploiting Structure of Maximum Likelihood Estimators for Extreme Value Threshold Selection, \emph{Technometrics}, \bold{58}(1), 116-126, \code{http://dx.doi.org/10.1080/00401706.2014.998345}.
+#'
 #' @author Jennifer L. Wadsworth
 #' @return plots of the requested diagnostics and a list with components
 #' \itemize{

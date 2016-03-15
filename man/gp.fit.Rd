@@ -62,7 +62,7 @@ The approximate Bayesian methods (\code{"zs"} and \code{"zhang"}) are extracted 
 sampling assuming a GPD prior is placed on the parameter of the profile likelihood.
 }
 \note{
-Some of the internal functions (which are hidden from the user) allow for modelling of the parameters using covariates. This is not currently implemented within \code{gp.fit}, but users can call internal functions should they wish to use these features. \bold{Warning}
+Some of the internal functions (which are hidden from the user) allow for modelling of the parameters using covariates. This is not currently implemented within \code{gp.fit}, but users can call internal functions should they wish to use these features.
 }
 \examples{
 library(ismev)

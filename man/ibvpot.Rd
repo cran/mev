@@ -17,7 +17,7 @@ ibvpot(fitted, q, silent = FALSE)
 an invisible numeric vector containing marginal, joint and conditional exceedance probabilities.
 }
 \description{
-This is an apaptation of the \pkg{evir} package \code{\link[evir]{interpret.gpdbiv}} function.
+This is an adaptation of the \pkg{evir} package \code{\link[evir]{interpret.gpdbiv}} function.
 \code{interpret.fbvpot} was adapted to deal with the output of a call to
 \code{\link[evd]{fbvpot}} from the \pkg{evd} and to handle families other than the logistic distribution.
 The likelihood derivation comes from expression 2.10 in Smith et al. (1997).

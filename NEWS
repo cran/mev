@@ -1,3 +1,8 @@
+mev v1.7 (Release date: 2016-03-15)
+==============
+* fixed an error in the normal sampler (affecting version 1.5 and 1.6)
+All simulations of Brown-Resnick or extremal-Student were affected by the mistake 
+
 mev v1.6 (Release date: 2016-03-08)
 ==============
 
@@ -17,7 +22,7 @@ mev v1.4 (not on CRAN)
 ==============
 Changes:
 
-* fixed error simulation on grids
+* fixed error for simulation on grids
 * check for marginal mean constraint for the Dirichlet mixture now has tolerance
 
 mev v1.3 (Release date: 2015-10-05)

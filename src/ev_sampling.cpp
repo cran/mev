@@ -75,7 +75,7 @@ NumericMatrix mvrnorm(int n, NumericVector mu, NumericMatrix Sigma){
   //Covariance matrix must be symmetric - otherwise eig_sym throws error
   arma::eig_sym(eigval, eigvec, Xmat);
   arma::mat sample(n,length);
-  sample = q*eigvec*arma::diagmat(arma::sqrt(eigval));
+  sample = q*arma::diagmat(arma::sqrt(eigval))*trans(eigvec);
   sample.each_row() += Mu;
 // arma::colvec intermed(length);
 // for(int t=0;t<n;t++){
@@ -111,7 +111,7 @@ arma::mat mvrnorm_arma(int n, arma::colvec Mu, arma::mat Xmat){
   //Covariance matrix must be symmetric - otherwise eig_sym throws error
   arma::eig_sym(eigval, eigvec, Xmat);
   arma::mat sample(n,length);
-  sample = q*eigvec*arma::diagmat(arma::sqrt(eigval));
+  sample = q*arma::diagmat(arma::sqrt(eigval))*trans(eigvec);
   sample.each_row() += Mu.t();
 //   arma::colvec intermed(length);
 //   for(int t=0;t<n;t++){

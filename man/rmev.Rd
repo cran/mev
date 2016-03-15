@@ -60,7 +60,12 @@ The vector param differs depending on the model
 
 Stephenson points out that the multivariate asymmetric negative logistic model is not a valid distribution function.
 The implementation in \code{mev} uses the same construction as the asymmetric logistic distribution,
-and as such it does not match the bivariate implementation.
+and as such it does not match the bivariate implementation of \link[evd]{rbvevd}.
+
+The dependence parameter of the \code{evd} package for the Husler-Reiss distribution can be recovered taking
+\eqn{2/r=\sqrt(2\gamma(h))} where \eqn{h} is the lag vector between sites, or else if \code{sigma} is supplied,
+or else via \eqn{2/r=\sqrt(2(1-\rho))}{2/r=(2(1-\code{cor}))^(1/2)} where \eqn{\rho}{cor} is the entry in the correlation matrix
+between the pair of variables of interest.
 }
 \examples{
 set.seed(1)

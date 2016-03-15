@@ -26,7 +26,8 @@
 #' maximization. Other options are one-dimensional maximization of the profile the \code{nlm} function or \code{optim}.
 #' Two-dimensional optimisation using 2D-optimization \code{\link[ismev]{ismev}} using the routine
 #' from \code{gpd.fit} from the \code{ismev} library, with the addition of the algebraic gradient.
-#' The choice of \code{GP.fit} should make no difference but the options were kept. \bold{Warning}: the function is not robust
+#' The choice of \code{GP.fit} should make no difference but the options were kept.
+#' \bold{Warning}: the function is not robust
 #' and will not recover from failure of the maximization routine, returning various error messages.
 #'
 #'
@@ -813,7 +814,7 @@ gpd.vcov.mat <- function(data, scale, shape, loc=NULL){
 		z$mle <- x$par
 		z$rate <- length(xdatu) / n
 		z$cov <- tryCatch(solve(x$hessian), error = function(e){matrix(NA, ncol(x$hessian),ncol(x$hessian))}) #TODO fix this
-		z$se <- suppressWarnings(sqrt(diag(z$cov)))
+		suppressWarnings(z$se <- sqrt(diag(z$cov)))
 		z$n <- n
 		z$npy <- npy
 		z$xdata <- xdat
@@ -866,7 +867,7 @@ gpd.vcov.mat <- function(data, scale, shape, loc=NULL){
 		init <- ifelse(is.null(init.val), (2^0.1 - 1) / median(ex.data), init.val)
 		f.scale <- GP.1D.negloglik(init)
 		typ.size <- init
-		res <- nlm(GP.1D.negloglik, init, fscale = f.scale, typsize = typ.size, iterlim=1000, check.analyticals =	FALSE, ...	)
+		suppressWarnings(res <- nlm(GP.1D.negloglik, init, fscale = f.scale, typsize = typ.size, iterlim=1000, check.analyticals =	FALSE, ...	))
 		phi.hat <- res$estimate
 		xi.hat <- mean(log(1 + res$estimate * ex.data))
 		sigma.hat <- xi.hat / phi.hat
@@ -1433,7 +1434,7 @@ function(x) {# x: sample data from the GPD
 #' Other options for maximization of the profile likelihood are \code{nlm} and \code{optim}, which use respectively \code{\link[stats]{nlm}} and \code{\link[stats]{optim}}. Method \code{"ismev"} is the two-dimensional optimization routine \code{\link[ismev]{gpd.fit}} from the \code{\link[ismev]{ismev}} library, with in addition the algebraic gradient.
 #' The approximate Bayesian methods (\code{"zs"} and \code{"zhang"}) are extracted respectively from Zhang and Stephens (2009) and Zhang (2010) and consists of a approximate posterior mean calculated via importance
 #' sampling assuming a GPD prior is placed on the parameter of the profile likelihood.
-#' @note Some of the internal functions (which are hidden from the user) allow for modelling of the parameters using covariates. This is not currently implemented within \code{gp.fit}, but users can call internal functions should they wish to use these features. \bold{Warning}
+#' @note Some of the internal functions (which are hidden from the user) allow for modelling of the parameters using covariates. This is not currently implemented within \code{gp.fit}, but users can call internal functions should they wish to use these features.
 #' @author Paul J. Northrop and Claire L. Coleman for the frequentist functions.
 #' Zhang and Stephens (2009) and Zhang (2010) for the \code{zs} and \code{zhang} approximate methods and L. Belzile for the wrapper and MCMC samplers.
 #'
@@ -1497,23 +1498,26 @@ gp.fit <- function(xdat, threshold, method=c("Grimshaw","nlm","optim","ismev","z
 		method="Grimshaw"
 	}
 				if (method == "nlm") {
-				temp <-	.gpd_1D_fit(xdat, threshold, show = F, xi.tol = xi.tol, calc.se = FALSE) # threshold 1D max, algebraic Hessian
-				#If algorithm failed to converge with initial values, switch to Grimshaw
-				if(temp$conv != 0 || !any(is.nan(temp$mle))){ #algorithm
-					warning("Algorithm did not converge. Switching method to Grimshaw")
-					#if( temp$mle[1] < 0 || temp$mle[2]>10 || temp$mle[2]<3 TODO fix
-				  temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
-				  temp$mle <- c(temp$a, -temp$k)
-				  #If values are numeric, but the algorithm diverged
-				} else if (is.numeric(temp$mle) && !is.nan(temp$mle)){
-					if( temp$mle[1] < 0 || temp$mle[2]>10 || temp$mle[2]<3){
-						temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
-				  temp$mle <- c(temp$a, -temp$k)
-					}
-				}
-				temp <-	.GP_1D_fit_nlm(xdat, threshold, init.val = temp$mle[2] / temp$mle[1], gradtol = 1e-20, steptol = 1e-20, calc.se = FALSE)
-
-				# 1D max, use nlm to get gradients v close to zero
+				temp <- .Zhang_Stephens_posterior(xdat)
+# 				temp <-	.gpd_1D_fit(xdat, threshold, show = F, xi.tol = xi.tol, calc.se = FALSE)
+				# threshold 1D max, algebraic Hessian
+# 				#If algorithm failed to converge with initial values, switch to Grimshaw
+# 				if(temp$conv != 0 || any(is.nan(temp$mle))){ #algorithm
+# 					warning("Algorithm did not converge. Switching method to Grimshaw")
+# 					#if( temp$mle[1] < 0 || temp$mle[2]>10 || temp$mle[2]<3 TODO fix
+# 				  temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
+# 				  temp$mle <- c(temp$a, -temp$k)
+# 				  #If values are numeric, but the algorithm diverged
+# 				} else if (is.numeric(temp$mle) && !is.nan(temp$mle)){
+# 					if( temp$mle[1] < 0 || temp$mle[2]>10 || temp$mle[2]<3){
+# 						temp <- .gpd_grimshaw(xdat[xdat > threshold] - threshold)
+# 				  temp$mle <- c(temp$a, -temp$k)
+# 					}
+# 				}
+				temp <-	.GP_1D_fit_nlm(xdat, threshold, init.val = temp$mle[2] / temp$mle[1],
+				                       gradtol = 1e-10, steptol = 1e-5, calc.se = FALSE)
+        ifelse(temp$code <2, temp$conv <- 0, temp$conv <- 50)
+        # 1D max, use nlm to get gradients v close to zero
 			} else if (method == "ismev") {
 				temp <-	.gpd_2D_fit(xdat, threshold, show = FALSE) # ismev GP fitting function
 				if(temp$conv != 0){#algorithm failed to converge

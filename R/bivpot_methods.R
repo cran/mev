@@ -1,7 +1,7 @@
 
 #' Interpret bivariate threshold exceedance models
 #'
-#' This is an apaptation of the \pkg{evir} package \code{\link[evir]{interpret.gpdbiv}} function.
+#' This is an adaptation of the \pkg{evir} package \code{\link[evir]{interpret.gpdbiv}} function.
 #' \code{interpret.fbvpot} was adapted to deal with the output of a call to
 #' \code{\link[evd]{fbvpot}} from the \pkg{evd} and to handle families other than the logistic distribution.
 #' The likelihood derivation comes from expression 2.10 in Smith et al. (1997).
