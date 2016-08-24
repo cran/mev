@@ -116,15 +116,26 @@ mvrnorm <- function(n, mu, Sigma) {
     .Call('mev_rPexstud', PACKAGE = 'mev', index, sigma, al)
 }
 
-#' Generate from extremal Husler-Reiss distribution (Brown-Resnick) \eqn{Y \sim {P_x}}, where
+#' Generate from extremal Husler-Reiss distribution \eqn{Y \sim {P_x}}, where
+#' \eqn{P_{x}} is probability of extremal function
+#'
+#' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+#' @param Lambda an symmetric square matrix of coefficients \eqn{\lambda^2}
+#'
+#' @return a \code{d}-vector from \eqn{P_x}
+.rPHuslerReiss <- function(index, Lambda) {
+    .Call('mev_rPHuslerReiss', PACKAGE = 'mev', index, Lambda)
+}
+
+#' Generate from Brown-Resnick process \eqn{Y \sim {P_x}}, where
 #' \eqn{P_{x}} is probability of extremal function
 #'
 #' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
 #' @param Sigma a positive semi-definite covariance matrix
 #'
 #' @return a \code{d}-vector from \eqn{P_x}
-.rPHuslerReiss <- function(index, Sigma) {
-    .Call('mev_rPHuslerReiss', PACKAGE = 'mev', index, Sigma)
+.rPBrownResnick <- function(index, Sigma) {
+    .Call('mev_rPBrownResnick', PACKAGE = 'mev', index, Sigma)
 }
 
 #' Generate from Smith model (moving maxima) \eqn{Y \sim {P_x}}, where
@@ -161,8 +172,8 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param n sample size
 #' @param theta a one-dimensional parameter
 #'
-#' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable
-#' processes, \emph{arXiv:1506.04430v1}, 1--24.
+#'@references Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes,
+#'\emph{Biometrika}, \bold{103}(2), 303--317.
 #'
 #' @return an \code{n} by \code{d} sample from the spectral distribution
 .rlogspec <- function(n, d, theta) {
@@ -171,13 +182,13 @@ mvrnorm <- function(n, mu, Sigma) {
 
 #' Generates from \eqn{Q_i}{Qi}, the spectral measure of the negative logistic model
 #'
-#' Simulation algorithm of Dombry et al. (2015)
+#' Simulation algorithm of Dombry et al. (2016)
 #'
 #' @param n sample size
 #' @param theta a one-dimensional parameter
 #'
-#' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable
-#' processes, \emph{arXiv:1506.04430v1}, 1--24.
+#'@references Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes,
+#'\emph{Biometrika}, \bold{103}(2), 303--317.
 #'
 #' @return an \code{n} by \code{d} sample from the spectral distribution
 .rneglogspec <- function(n, d, theta) {
@@ -224,19 +235,29 @@ mvrnorm <- function(n, mu, Sigma) {
     .Call('mev_rexstudspec', PACKAGE = 'mev', n, sigma, al)
 }
 
-#' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Brown-Resnick (or Husler-Reiss) model
+#' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Husler-Reiss model
+#'
+#' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+#' @param Lambda an symmetric square matrix of coefficients \eqn{\lambda^2}
+#'
+#' @return an \code{n} by \code{d} sample from the spectral distribution
+.rhrspec <- function(n, Lambda) {
+    .Call('mev_rhrspec', PACKAGE = 'mev', n, Lambda)
+}
+
+#' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Brown-Resnick model
 #'
 #' Simulation algorithm of Dombry et al. (2015)
 #'
 #' @param n sample size
 #' @param Sigma \code{d}-dimensional covariance matrix
 #'
-#' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable
-#' processes, \emph{arXiv:1506.04430v1}, 1--24.
+#'@references Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes,
+#'\emph{Biometrika}, \bold{103}(2), 303--317.
 #'
 #' @return an \code{n} by \code{d} sample from the spectral distribution
-.rhrspec <- function(n, Sigma) {
-    .Call('mev_rhrspec', PACKAGE = 'mev', n, Sigma)
+.rbrspec <- function(n, Sigma) {
+    .Call('mev_rbrspec', PACKAGE = 'mev', n, Sigma)
 }
 
 #' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Smith model (moving maxima)
@@ -247,8 +268,8 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param Sigma \code{d}-dimensional covariance matrix
 #' @param loc location matrix
 #'
-#' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable
-#' processes, \emph{arXiv:1506.04430v1}, 1--24.
+#'@references Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes,
+#'\emph{Biometrika}, \bold{103}(2), 303--317.
 #'
 #' @return an \code{n} by \code{d} sample from the spectral distribution
 .rsmithspec <- function(n, Sigma, loc) {
@@ -276,7 +297,7 @@ mvrnorm <- function(n, mu, Sigma) {
 }
 
 #' Multivariate extreme value distribution sampling algorithm
-#' corresponding to Algorithm 1 in Dombry, Engelke and Oesting (2015),
+#' corresponding to Algorithm 1 in Dombry, Engelke and Oesting (2016),
 #' using the formulation of the Dirichlet mixture of Coles and Tawn (1991)
 #' as described and derived in Boldi (2009) for the bilogistic and extremal
 #' Dirichlet model. Models currently implemented include logistic, negative
@@ -288,7 +309,7 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param model integer, currently ranging from 1 to 8, corresponding respectively to
 #' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
 #' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
-#' @param Sigma covariance matrix for Husler-Reiss, Smith and extremal student. Default for compatibility
+#' @param Sigma covariance matrix for Brown-Resnick, Smith and extremal student. Default for compatibility
 #' @param loc matrix of location for Smith model.
 #'
 #' @return a \code{n} by \code{d} matrix containing the sample
@@ -297,7 +318,7 @@ mvrnorm <- function(n, mu, Sigma) {
 }
 
 #' Multivariate extreme value distribution sampling algorithm
-#' corresponding to Algorithm 2 in Dombry, Engelke and Oesting (2015)
+#' corresponding to Algorithm 2 in Dombry, Engelke and Oesting (2016)
 #'
 #' Models currently implemented include logistic and negative logistic, sampling
 #' from the extremal functions. This requires derivation of \eqn{P_x}
@@ -308,7 +329,7 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param model integer, currently ranging from 1 to 8, corresponding respectively to
 #' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
 #' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
-#' @param Sigma covariance matrix for Husler-Reiss, Smith and extremal student. Default for compatibility
+#' @param Sigma covariance matrix for Brown-Resnick, Smith and extremal student. Default for compatibility
 #' @param loc matrix of location for Smith model.
 #'
 #' @return a \code{n} by \code{d} matrix containing the sample
@@ -325,11 +346,13 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @param param a vector of parameters
 #' @param model integer, currently ranging from 1 to 7, corresponding respectively to
 #' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
-#' (5) \code{extstud}, (6) \code{hr}, (7) \code{ct} and (8) \code{smith}.
-#' @param Sigma covariance matrix for Husler-Reiss and extremal student. Default for compatibility
+#' (5) \code{extstud}, (6) \code{br}, (7) \code{ct}, (8) \code{smith} and (9) \code{hr}.
+#' @param Sigma covariance matrix for Brown-Resnick and extremal student, symmetric matrix
+#' of squared coefficients \eqn{\lambda^2} for Husler-Reiss. Default for compatibility
 #' @param loc matrix of locations for the Smith model
 #'
-#' @references Dombry, Engelke and Oesting (2015). Exact simulation of max-stable processes, \emph{arXiv:1506.04430v1}, 1--24.
+#'@references Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes,
+#'\emph{Biometrika}, \bold{103}(2), 303--317.
 #' @references Boldi (2009). A note on the representation of parametric models for multivariate extremes. \emph{Extremes} \bold{12}, 211--218.
 #'
 #' @return a \code{n} by \code{d} matrix containing the sample

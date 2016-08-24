@@ -11,7 +11,7 @@ NumericVector pll(NumericVector x, NumericVector theta){
 }
 // GPD prior of Zhang and Stephens
 double prZS(NumericVector theta, double bound, double scale0, double xi0){
-  return -log(scale0)-(-1.0/xi0-1.0)*log(1 + xi0*(bound-theta[0])/scale0);
+  return -log(scale0)-(1.0/xi0 + 1.0)*log(1 + xi0*(bound-theta[0])/scale0);
 }
 
 // Adaptive Metropolis-Hastings algorithm for posterior estimates of GPD profile likelihood model
@@ -66,8 +66,7 @@ List Zhang_Stephens(NumericVector x, NumericVector init, NumericVector adapt_sd=
       prop[0] = rnorm(1,cur[0], adapt_sd[0])[0];
       prop_kt = pll(x, prop);
       prop_ll[0] = prop_kt[0] + prZS(prop, bound, scale0, xi0);
-    if(log(runif(1)[0])<(prop_ll[0] + dnorm(prop,0.0,adapt_sd[0],1)[0]-cur_ll[0]-
-       dnorm(cur,0.0,adapt_sd[0],1)[0])){
+    if(log(runif(1)[0])<(prop_ll[0]-cur_ll[0])){ // - dnorm(cur,0.0,adapt_sd[0],1)[0]+ dnorm(prop,0.0,adapt_sd[0],1)[0]
       //Increase acceptance counter and save current proposal
         accept[0]=accept[0]+1.0;
         cur[0] = prop[0];

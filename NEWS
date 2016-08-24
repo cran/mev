@@ -1,4 +1,21 @@
-mev v1.7 (Release date: 2016-03-15)
+mev v.18x
+==============
+New:
+* Bias-correction, TEM added
+* Penultimate approximations (Papastathopoulos & Tawn, 2013), Naveau et al. (2014) and Smith (1987)
+Changes:
+* model "br" is now distinct from "hr"
+* fixed invalid random number generation from logistic model for near-independence cases
+
+
+mev v1.7 (Release date: 2016-06-07)
+==============
+* fixed an error in the acceptance rate for the gp.fit MCMC
+New: 
+* ext.index Extremal index estimates based on interexceedance and gap times
+* infomat.test Information matrix test of Suveges and Davison (2010)
+
+mev v1.6.1 (Release date: 2016-03-15)
 ==============
 * fixed an error in the normal sampler (affecting version 1.5 and 1.6)
 All simulations of Brown-Resnick or extremal-Student were affected by the mistake 

@@ -5,26 +5,26 @@
 \title{Random samples from spectral distributions of multivariate extreme value models.}
 \usage{
 rmevspec(n, d, param, sigma, model = c("log", "neglog", "bilog", "negbilog",
-  "hr", "xstud", "ct", "dirmix"), weights, vario, loc, ...)
+  "hr", "br", "xstud", "ct", "dirmix"), weights, vario, loc, ...)
 }
 \arguments{
 \item{n}{number of observations}
 
 \item{d}{dimension of sample}
 
-\item{param}{parameter vector for the logistic, bilogistic, negative bilogistic and Dirichlet (Coles and Tawn) model.
-Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model.}
+\item{param}{parameter vector for the logistic, bilogistic, negative bilogistic and extremal Dirichlet (Coles and Tawn) model.
+Parameter matrix for the Dirichlet mixture. Degree of freedoms for extremal student model. See \bold{Details}.}
 
-\item{sigma}{covariance matrix for Husler-Reiss and extremal Student-t distributions}
+\item{sigma}{covariance matrix for Brown-Resnick and extremal Student-t distributions. Symmetric matrix of squared  coefficients \eqn{\lambda^2} for the Husler-Reiss model, with zero diagonal elements.}
 
-\item{model}{choice between 1-parameter logistic and negative logistic, bilogistic, negative bilogistic and extremal Dirichlet,
-the Brown-Resnick and extremal Student max-stable process (which generate the Husler-Reiss MEV distribution), or the Dirichlet mixture.}
+\item{model}{for multivariate extreme value distributions, users can choose between 1-parameter logistic and negative logistic, asymmetric logistic and negative logistic, bilogistic, Husler-Reiss, extremal Dirichlet model (Coles and Tawn) or the Dirichlet mixture. Spatial models include
+the Brown-Resnick, Smith, Schlather and extremal Student max-stable processes.}
 
 \item{weights}{vector of length \code{m} for the \code{m} mixture components. Must sum to one}
 
 \item{vario}{function specifying the variogram. Used only if provided in conjonction with \code{loc} and if \code{sigma} is missing}
 
-\item{loc}{\code{d} by \code{k} matrix of location, used as input in the variogram \code{vario} or as parameter in the Smith \code{smith} model.}
+\item{loc}{\code{d} by \code{k} matrix of location, used as input in the variogram \code{vario} or as parameter for the Smith model. If \code{grid} is \code{TRUE}, unique entries should be supplied.}
 
 \item{...}{additional arguments for the \code{vario} function}
 }
@@ -32,7 +32,7 @@ the Brown-Resnick and extremal Student max-stable process (which generate the Hu
 an \code{n} by \code{d} exact sample from the corresponding multivariate extreme value model
 }
 \description{
-Generate from \eqn{Q_i}{Qi}, the spectral measure of a given multivariate extreme value model
+Generate from \eqn{Q_i}{Qi}, the spectral measure of a given multivariate extreme value model based on the L1 norm.
 }
 \details{
 The vector param differs depending on the model
@@ -47,6 +47,10 @@ The vector param differs depending on the model
  \item \code{dirmix}: \code{d} by \code{m}-dimensional matrix of positive (a)symmetry parameters
 }
 }
+\section{Note}{
+
+ This functionality can be useful to generate for example Pareto processes (by multiplying by a standard Pareto variable the output). Other functionals are not currently implemented.
+}
 \examples{
 set.seed(1)
 rmevspec(n=100, d=3, param=2.5, model="log")
@@ -59,7 +63,7 @@ scale <- 0.5; alpha <- 1
 vario <- function(x) scale*sqrt(sum(x^2))^alpha
 #grid specification
 grid.loc <- as.matrix(expand.grid(runif(4), runif(4)))
-rmevspec(n=100, vario=vario,loc=grid.loc, model="hr")
+rmevspec(n=100, vario=vario,loc=grid.loc, model="br")
 ## Example with Dirichlet mixture
 alpha.mat <- cbind(c(2,1,1),c(1,2,1),c(1,1,2))
 rmevspec(n=100, param=alpha.mat, weights=rep(1/3,3), model="dirmix")
@@ -68,8 +72,7 @@ rmevspec(n=100, param=alpha.mat, weights=rep(1/3,3), model="dirmix")
 Leo Belzile
 }
 \references{
-Dombry, Engelke and Oesting (2015). Exact simulation of max-stable processes,
-\emph{arXiv:1506.04430v1}, 1--24.
+Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes, \emph{Biometrika}, \bold{103}(2), 303--317.
 
 Boldi (2009). A note on the representation of parametric models for multivariate extremes.
 \emph{Extremes} \bold{12}, 211--218.
