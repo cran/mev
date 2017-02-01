@@ -1,4 +1,18 @@
-mev v.18x
+mev v.1.10
+==============
+New:
+* Added 'negdir' model to rmev
+Changes:
+* Fixed argument matching in function `egp2`
+
+mev v.1.9x
+==============
+New:
+* Changes to angmeas to include different weighting if the region of interest is `max` or `min`
+Changes:
+* Fixed bug affecting angmeas in the bivariate case that would cause the method to crash
+
+mev v.1.8x
 ==============
 New:
 * Bias-correction, TEM added
