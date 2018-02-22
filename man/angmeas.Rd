@@ -6,7 +6,7 @@
 \usage{
 angmeas(x, th, Rnorm = c("l1", "l2", "linf"), Anorm = c("l1", "l2", "linf",
   "arctan"), marg = c("Frechet", "Pareto"), wgt = c("Empirical",
-  "Euclidean"), region = c("sum", "min", "max"))
+  "Euclidean"), region = c("sum", "min", "max"), is.angle = FALSE)
 }
 \arguments{
 \item{x}{an \code{n} by \code{d} sample matrix}
@@ -23,6 +23,8 @@ angmeas(x, th, Rnorm = c("l1", "l2", "linf"), Anorm = c("l1", "l2", "linf",
 
 \item{region}{character string specifying which observations to consider (and weight). \code{"sum"} corresponds to a radial threshold
 \eqn{\sum x_i > }\code{th}, \code{"min"} to \eqn{\min x_i >}\code{th} and \code{"max"} to \eqn{\max x_i >}\code{th}.}
+
+\item{is.angle}{logical indicating whether observations are already angle with respect to \code{region}. Default to \code{FALSE}.}
 }
 \value{
 a list with arguments \code{ang} for the \eqn{d-1} pseudo-angular sample, \code{rad} with the radial component
@@ -52,9 +54,6 @@ x <- rmev(n=25, d=3, param=0.5, model="log")
 wts <- angmeas(x=x, th=0, Rnorm="l1", Anorm="l1", marg="Frechet", wgt="Empirical")
 wts2 <- angmeas(x=x, Rnorm="l2", Anorm="l2", marg="Pareto", th=0)
 }
-\author{
-Leo Belzile
-}
 \references{
 Einmahl, J.H.J. and J. Segers (2009). Maximum empirical likelihood estimation of the spectral measure of an extreme-value distribution, \emph{Annals of Statistics}, \bold{37}(5B), 2953--2989.
 
@@ -62,4 +61,6 @@ de Carvalho, M. and B. Oumow and J. Segers and M. Warchol (2013). A Euclidean li
 
 Owen, A.B. (2001). \emph{Empirical Likelihood}, CRC Press, 304p.
 }
-
+\author{
+Leo Belzile
+}

@@ -24,7 +24,7 @@ emplik(dat, mu = rep(0, ncol(dat)), lam = rep(0, ncol(dat)),
 }
 \value{
 a list with components
-#' \itemize{
+\itemize{
  \item \code{logelr} log empirical likelihood ratio.
  \item \code{lam} Lagrange multiplier (vector of length \code{d}).
  \item \code{wts} \code{n} vector of observation weights (probabilities).
@@ -37,10 +37,9 @@ a list with components
 \description{
 Self-concordant empirical likelihood for a vector mean
 }
-\author{
-Art Owen, \code{C++} port by Leo Belzile
-}
 \references{
 Owen, A.B. (2013). Self-concordance for empirical likelihood, \emph{Canadian Journal of Statistics}, \bold{41}(3), 387--397.
 }
-
+\author{
+Art Owen, \code{C++} port by Leo Belzile
+}

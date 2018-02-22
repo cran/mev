@@ -1,4 +1,5 @@
 // [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::interfaces(r, cpp)]]
 # include <RcppArmadillo.h>
 using namespace Rcpp;
 //using namespace arma;
@@ -129,9 +130,9 @@ arma::vec svdlm (arma::mat X, arma::colvec y){
   }
   return V * diagmat(d) * U.t()  * y;
 }
-//[[Rcpp::export(.emplik)]]
-List emplik(arma::mat z, arma::colvec mu, arma::vec lam, double eps,
-	double M = 1e30, double thresh = 1e-30, int itermax = 100){
+//[[Rcpp::export(.emplik_intern)]]
+List emplik_intern(arma::mat z, arma::colvec mu, arma::vec lam, double eps,
+	double M = 1e30, double thresh = 1e-12, int itermax = 1000){
 //(arma::mat z, arma::vec mu  = vec(z.n_cols,fill::zeros), double eps = 1/z.nrows, double M = datum::inf);
 // # Backtracking line search parameters [Tweak only with extreme caution.]
 // # See Boyd and Vandenberghe, pp 464-466.
@@ -224,4 +225,31 @@ NumericVector Pickands_emp(NumericVector s, NumericVector ang, NumericVector wts
     pick[i] = 2*sum(pmax((1-s[i])*ang,s[i]*(1-ang))*wts);
   }
   return pick;
+}
+
+// Log of Dirichlet function
+// [[Rcpp::export(ldirfn)]]
+double ldirfn(NumericVector param){
+  double res = lgamma(sum(param))-sum(lgamma(param));
+  return res;
+}
+
+
+
+// [[Rcpp::export(.loocvdens)]]
+NumericVector loocvdens(double nu, NumericMatrix ang, NumericVector wts, NumericMatrix loowts) {
+  NumericVector result(1);
+  int n = loowts.ncol();
+  NumericVector sumbeta(1);
+  for(int i = 0; i < n; i++){
+    sumbeta[0] = 0;
+    for(int j = 0; j < n; j++){
+      if(i == j){
+        continue;
+      }
+      sumbeta[0] = sumbeta[0] + exp(log(loowts(j, i)) + ldirfn( nu * ang(j,_) ) + sum((nu * ang(j,_) - 1.0) * log(ang(i,_))));
+    }
+    result[0] = result[0] - log(sumbeta[0]);
+  }
+  return result;
 }
