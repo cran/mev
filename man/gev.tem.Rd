@@ -4,9 +4,9 @@
 \alias{gev.tem}
 \title{Tangent exponential model approximation for the GEV distribution}
 \usage{
-gev.tem(param = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"), dat,
-  psi = NULL, p = NULL, q = 0.5, N = NULL, n.psi = 50, plot = TRUE,
-  correction = TRUE)
+gev.tem(param = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"),
+  dat, psi = NULL, p = NULL, q = 0.5, N = NULL, n.psi = 50,
+  plot = TRUE, correction = TRUE)
 }
 \arguments{
 \item{param}{parameter over which to profile}
@@ -15,7 +15,7 @@ gev.tem(param = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"), dat,
 
 \item{psi}{scalar or ordered vector of values for the interest parameter. If \code{NULL} (default), a grid of values centered at the MLE is selected}
 
-\item{p}{tail probability for the (1-p)th quantile (return levels). Required only if \code{param = "retlev"}}
+\item{p}{tail probability for the (1-p)th quantile (return levels). Required only if \code{param = 'retlev'}}
 
 \item{q}{probability level of quantile. Required only for \code{param} \code{Nquant}.}
 
@@ -51,16 +51,17 @@ cover the range of options, but the fail may fit and return an error.
 }
 \examples{
 \dontrun{
+set.seed(1234)
 dat <- evd::rgev(n = 40, loc = 0, scale = 2, shape = -0.1)
-gev.tem("shape", dat = dat, plot = TRUE)
-gev.tem("quant", dat = dat, p = 0.01, plot = TRUE)
-gev.tem("scale", psi = seq(1, 4, by = 0.1), dat = dat, plot = TRUE)
+gev.tem('shape', dat = dat, plot = TRUE)
+gev.tem('quant', dat = dat, p = 0.01, plot = TRUE)
+gev.tem('scale', psi = seq(1, 4, by = 0.1), dat = dat, plot = TRUE)
 dat <- evd::rgev(n = 40, loc = 0, scale = 2, shape = 0.2)
-gev.tem("loc", dat = dat, plot = TRUE)
-gev.tem("Nmean", dat = dat, p = 0.01, N=100, plot = TRUE)
-gev.tem("Nquant", dat = dat, q = 0.5, N=100, plot = TRUE)
+gev.tem('loc', dat = dat, plot = TRUE)
+gev.tem('Nmean', dat = dat, p = 0.01, N=100, plot = TRUE)
+gev.tem('Nquant', dat = dat, q = 0.5, N=100, plot = TRUE)
 }
 }
 \author{
-Leo Belzile, from code by A. Davison extracted from the \code{hoa} package bundle.
+Leo Belzile
 }

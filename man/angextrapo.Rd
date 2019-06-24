@@ -18,7 +18,7 @@ a list with elements
 \itemize{
 \item{\code{w}: }{angles between zero and one}
 \item{\code{g}: }{scale function at a given value of \code{w}}
-\item{\code{eta}: }{Ledford and Tawn coefficient}
+\item{\code{eta}: }{Ledford and Tawn tail dependence coefficient}
 }
 }
 \description{
@@ -29,7 +29,7 @@ where the sample (\eqn{X_P, Y_P}) are observations on a common unit Pareto scale
  shape parameter of a generalized Pareto distribution on \eqn{\min(X_P, Y_P)}.
 }
 \examples{
-angextrapo(rmev(n = 1000, model = "log", d = 2, param = 0.5))
+angextrapo(rmev(n = 1000, model = 'log', d = 2, param = 0.5))
 }
 \references{
 Ledford, A.W. and J. A. Tawn (1996), Statistics for near independence in multivariate extreme values. \emph{Biometrika}, \bold{83}(1), 169--187.

@@ -4,7 +4,8 @@
 \alias{lambdadep}
 \title{Estimation of the bivariate lambda function of Wadsworth and Tawn (2013)}
 \usage{
-lambdadep(dat, qu = 0.95, method = c("hill", "mle", "bayes"), plot = TRUE)
+lambdadep(dat, qu = 0.95, method = c("hill", "mle", "bayes"),
+  plot = TRUE)
 }
 \arguments{
 \item{dat}{an \eqn{n} by \eqn{2} matrix of multivariate observations}
@@ -28,7 +29,7 @@ a plot of the lambda function if \code{plot=TRUE}, plus an invisible list with c
 \item \code{w} the sequence of angles in (0,1) at which the \code{lambda} values are evaluated
 \item \code{lambda} point estimates of lambda
 \item \code{lower.confint} 95% confidence interval for lambda (lower bound)
-\item \code{lower.confint} 95% confidence interval for lambda (upper bound)
+\item \code{upper.confint} 95% confidence interval for lambda (upper bound)
 }
 }
 \description{
@@ -37,11 +38,11 @@ Estimation of the bivariate lambda function of Wadsworth and Tawn (2013)
 \examples{
 set.seed(12)
 dat <- evd::rbvevd(n=1000, dep = 0.1)
-lambdadep(dat, method = "hill")
+lambdadep(dat, method = 'hill')
 \dontrun{
-lambdadep(dat, method = "bayes")
-lambdadep(dat, method = "mle")
+lambdadep(dat, method = 'bayes')
+lambdadep(dat, method = 'mle')
 dat <- matrix(runif(n = 2000), ncol = 2)
-lambdadep(dat, method = "hill")
+lambdadep(dat, method = 'hill')
 }
 }

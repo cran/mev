@@ -2,18 +2,18 @@
 % Please edit documentation in R/profile.R
 \name{gev.pll}
 \alias{gev.pll}
-\title{Modified profile likelihood for the generalized extreme value distribution}
+\title{Profile log-likelihood for the generalized extreme value distribution}
 \usage{
-gev.pll(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"),
-  mod = c("tem", "modif"), dat, N = NULL, p = NULL, q = NULL,
-  correction = TRUE, ...)
+gev.pll(psi, param = c("loc", "scale", "shape", "quant", "Nmean",
+  "Nquant"), mod = "profile", dat, N = NULL, p = NULL, q = NULL,
+  correction = TRUE, plot = TRUE, ...)
 }
 \arguments{
 \item{psi}{parameter vector over which to profile (unidimensional)}
 
 \item{param}{string indicating the parameter to profile over}
 
-\item{mod}{string indicating the model. See \bold{Details}.}
+\item{mod}{string indicating the model, one of \code{profile}, \code{tem} or \code{modif}.See \bold{Details}.}
 
 \item{dat}{sample vector}
 
@@ -25,7 +25,9 @@ gev.pll(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"),
 
 \item{correction}{logical indicating whether to use \code{spline.corr} to smooth the tem approximation.}
 
-\item{...}{additional arguments such as output from call to \code{Vfun} if \code{mode="tem"}.}
+\item{plot}{logical; should the profile likelihood be displayed? Default to \code{TRUE}}
+
+\item{...}{additional arguments such as output from call to \code{Vfun} if \code{mode='tem'}.}
 }
 \value{
 a list with components
@@ -65,18 +67,19 @@ based on Severini's (1999) empirical covariance and the Fraser and Reid tangent 
 model approximation.
 }
 \details{
-The two \code{mod} available are \code{tem}, the tangent exponential model (TEM) approximation and
+The two additional \code{mod} available are \code{tem}, the tangent exponential model (TEM) approximation and
 \code{modif} for the penalized profile likelihood based on \eqn{p^*} approximation proposed by Severini.
 For the latter, the penalization is based on the TEM or an empirical covariance adjustment term.
 }
 \examples{
 \dontrun{
+set.seed(123)
 dat <- evd::rgev(n = 100, loc = 0, scale = 2, shape = 0.3)
-gev.pll(psi = seq(-0.5,1, by=0.01), param = "shape", dat = dat)
-gev.pll(psi = seq(-3, 3, length = 50), param = "loc", dat = dat)
-gev.pll(psi = seq(10, 30, by = 0.1), param = "quant", dat = dat, p = 0.01)
-gev.pll(psi = seq(12, 100, by=1), param = "Nmean", N = 100, dat = dat)
-gev.pll(psi = seq(12, 90, by=1), param = "Nquant", N = 100, dat = dat, q = 0.5)
+gev.pll(psi = seq(0,0.5, length = 50), param = 'shape', dat = dat)
+gev.pll(psi = seq(-1.5, 1.5, length = 50), param = 'loc', dat = dat)
+gev.pll(psi = seq(10, 40, by = 0.1), param = 'quant', dat = dat, p = 0.01)
+gev.pll(psi = seq(12, 100, by=1), param = 'Nmean', N = 100, dat = dat)
+gev.pll(psi = seq(12, 90, by=1), param = 'Nquant', N = 100, dat = dat, q = 0.5)
 }
 }
 \references{

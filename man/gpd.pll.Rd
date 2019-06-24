@@ -2,11 +2,12 @@
 % Please edit documentation in R/profile.R
 \name{gpd.pll}
 \alias{gpd.pll}
-\title{Modified profile likelihood for the generalized Pareto distribution}
+\title{Profile log-likelihood for the generalized Pareto distribution}
 \usage{
 gpd.pll(psi, param = c("scale", "shape", "quant", "VaR", "ES", "Nmean",
-  "Nquant"), mod = c("tem", "modif"), mle = NULL, dat, m = NULL,
-  N = NULL, p = NULL, q = NULL, correction = TRUE, ...)
+  "Nquant"), mod = "profile", mle = NULL, dat, m = NULL, N = NULL,
+  p = NULL, q = NULL, correction = TRUE, threshold = NULL,
+  plot = TRUE, ...)
 }
 \arguments{
 \item{psi}{parameter vector over which to profile (unidimensional)}
@@ -17,9 +18,9 @@ gpd.pll(psi, param = c("scale", "shape", "quant", "VaR", "ES", "Nmean",
 
 \item{mle}{maximum likelihood estimate in \eqn{(\psi, \xi)} parametrization if \eqn{\psi \neq \xi} and \eqn{(\sigma, \xi)} otherwise (optional).}
 
-\item{dat}{sample vector of excesses}
+\item{dat}{sample vector of excesses, unless \code{threshold} is provided (in which case user provides original data)}
 
-\item{m}{number of observations of interest for return levels. Required only for \code{args} values \code{"VaR"} or \code{"ES"}}
+\item{m}{number of observations of interest for return levels. Required only for \code{args} values \code{'VaR'} or \code{'ES'}}
 
 \item{N}{size of block over which to take maxima. Required only for \code{args} \code{Nmean} and \code{Nquant}.}
 
@@ -29,7 +30,11 @@ gpd.pll(psi, param = c("scale", "shape", "quant", "VaR", "ES", "Nmean",
 
 \item{correction}{logical indicating whether to use \code{spline.corr} to smooth the tem approximation.}
 
-\item{...}{additional arguments such as output from call to \code{Vfun} if \code{mode="tem"}.}
+\item{threshold}{numerical threshold above which to fit the generalized Pareto distribution}
+
+\item{plot}{logical; should the profile likelihood be displayed? Default to \code{TRUE}}
+
+\item{...}{additional arguments such as output from call to \code{Vfun} if \code{mode='tem'}.}
 }
 \value{
 a list with components
@@ -41,6 +46,8 @@ a list with components
 \item{\code{psi}:} vector of parameter \eqn{psi} given in \code{psi}
 \item{\code{pll}:} values of the profile log likelihood at \code{psi}
 \item{\code{maxpll}:} value of maximum profile log likelihood
+\item{\code{family}:} a string indicating "gpd"
+\item{\code{threshold}:} value of the threshold, by default zero
 }
 In addition, if \code{mod} includes \code{tem}
 \itemize{
@@ -69,18 +76,18 @@ which are based on Severini's (1999) empirical covariance
 and the Fraser and Reid tangent exponential model approximation.
 }
 \details{
-The two \code{mod} available are \code{tem}, the tangent exponential model (TEM) approximation and
+The three \code{mod} available are \code{profile} (the default), \code{tem}, the tangent exponential model (TEM) approximation and
 \code{modif} for the penalized profile likelihood based on \eqn{p^*} approximation proposed by Severini.
 For the latter, the penalization is based on the TEM or an empirical covariance adjustment term.
 }
 \examples{
 \dontrun{
 dat <- evd::rgpd(n = 100, scale = 2, shape = 0.3)
-gpd.pll(psi = seq(-0.5, 1, by=0.01), param = "shape", dat = dat)
-gpd.pll(psi = seq(0.1, 5, by=0.1), param = "scale", dat = dat)
-gpd.pll(psi = seq(20, 35, by=0.1), param = "quant", dat = dat, p = 0.01)
-gpd.pll(psi = seq(20, 80, by=0.1), param = "ES", dat = dat, m = 100)
-gpd.pll(psi = seq(15, 100, by=1), param = "Nmean", N = 100, dat = dat)
-gpd.pll(psi = seq(15, 90, by=1), param = "Nquant", N = 100, dat = dat, q = 0.5)
+gpd.pll(psi = seq(-0.5, 1, by=0.01), param = 'shape', dat = dat)
+gpd.pll(psi = seq(0.1, 5, by=0.1), param = 'scale', dat = dat)
+gpd.pll(psi = seq(20, 35, by=0.1), param = 'quant', dat = dat, p = 0.01)
+gpd.pll(psi = seq(20, 80, by=0.1), param = 'ES', dat = dat, m = 100)
+gpd.pll(psi = seq(15, 100, by=1), param = 'Nmean', N = 100, dat = dat)
+gpd.pll(psi = seq(15, 90, by=1), param = 'Nquant', N = 100, dat = dat, q = 0.5)
 }
 }

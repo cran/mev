@@ -45,7 +45,7 @@ EPFL-SB-MATH-STAT \\ Station 8, Bâtiment MA \\CH-1015, Switzerland,\\ \href{leo
 }
 \end{center}
 
-The `\code{mev}' package was originally introduced to implement the exact unconditional sampling algorithms in \cite{Dombry:2016}. Thetwo algorithms therein allow one to simulate simple max-stable random vectors. The implementation will work efficiently for moderate dimensions and do not currently take approximate schemes for large spatial domains.
+The `\code{mev}' package was originally introduced to implement the exact unconditional sampling algorithms in \cite{Dombry:2016}. The two algorithms therein allow one to simulate simple max-stable random vectors. The implementation will work efficiently for moderate dimensions.
 
 \section{Functions and use}
 
@@ -177,7 +177,7 @@ While \cite{Engelke:2015} state that H\"usler--Reiss variates can be sampled fol
 conditioned on a particular site ($\bs{s}_0$), which complicates the comparisons with the other methods.
 
 Let $I_{-j}=\{1, \ldots, d\} \setminus \{j\}$ and $\lambda_{ij}^2 \geq 0$ be entries of a strictly conditionally
-negative definite matrice $\bs{\Lambda}$, for which $\lambda_{ij}^2=\lambda_{ji}^2$. Then, following \cite{Nikoloulopoulos:2009}
+negative definite matrix $\bs{\Lambda}$, for which $\lambda_{ij}^2=\lambda_{ji}^2$. Then, following \cite{Nikoloulopoulos:2009}
 (Remark~2.5) and \cite{Huser:2013}, we can write the distribution function as
  \begin{align*}
    \P{\bs{X} \leq \bs{x}} = \exp \left[ -\sum_{j=1}^d \frac{1}{x_j} \Phi_{d-1, \bs{\Sigma}_{-j}} \left( \lambda_{ij}-
