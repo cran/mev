@@ -4,10 +4,21 @@
 \alias{rmev}
 \title{Exact simulations of multivariate extreme value distributions}
 \usage{
-rmev(n, d, param, asy, sigma, model = c("log", "alog", "neglog",
-  "aneglog", "bilog", "negbilog", "hr", "br", "xstud", "smith",
-  "schlather", "ct", "sdir", "dirmix"), alg = c("ef", "sm"), weights,
-  vario, coord = NULL, grid = FALSE, ...)
+rmev(
+  n,
+  d,
+  param,
+  asy,
+  sigma,
+  model = c("log", "alog", "neglog", "aneglog", "bilog", "negbilog", "hr", "br",
+    "xstud", "smith", "schlather", "ct", "sdir", "dirmix"),
+  alg = c("ef", "sm"),
+  weights,
+  vario,
+  coord = NULL,
+  grid = FALSE,
+  ...
+)
 }
 \arguments{
 \item{n}{number of observations}
@@ -90,6 +101,10 @@ vario2cov <- function(coord, semivario,...){
   semivario(sqrt(sum((coord[j,])^2)), ...) -
   semivario(sqrt(sum((coord[i,]-coord[j,])^2)), ...)))
 }
+# asymmetric logistic model - see evd::rmvevd
+asy <- list(0, 0, 0, 0, c(0,0), c(0,0), c(0,0), c(0,0), c(0,0), c(0,0),
+  c(.2,.1,.2), c(.1,.1,.2), c(.3,.4,.1), c(.2,.2,.2), c(.4,.6,.2,.5))
+rmev(n=1, d=4, param=0.3, asy=asy, model="alog")
 rmev(n=100, sigma=vario2cov(grid.coord, semivario = semivario, scale = 0.5, alpha = 1), model='br')
 #Example with a grid (generating an array)
 rmev(n=10, sigma=cbind(c(2,1), c(1,3)), coord=cbind(runif(4), runif(4)), model='smith', grid=TRUE)

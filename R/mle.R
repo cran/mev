@@ -204,7 +204,7 @@ fit.gpd <- function(xdat, threshold = 0, method = "Grimshaw", show = FALSE, MCMC
 #' data(eskrain)
 #' pp_mle <- fit.pp(eskrain, threshold = 30, np = 6201)
 #' plot(pp_mle)
-fit.pp <- function(xdat, threshold = 0, npp = 365, np = NULL, show = FALSE){
+fit.pp <- function(xdat, threshold = 0, npp = 1, np = NULL, show = FALSE){
   xdat <- as.vector(xdat)
   n <- length(xdat)
   if (missing(threshold) || length(threshold) != 1 || mode(threshold) !=  "numeric")
@@ -266,8 +266,10 @@ fit.pp <- function(xdat, threshold = 0, npp = 365, np = NULL, show = FALSE){
  fitted$counts <- mle$counts
  fitted$threshold <- u
  fitted$np <- np
+ fitted$npp <- npp
  fitted$nat <- nu
  fitted$pat <- nu/n
+ fitted$xdat <- xdat #data including non-exceedances
  fitted$exceedances <- xdatu
  class(fitted) <- c("mev_pp")
  if(show){
@@ -345,6 +347,7 @@ fit.gev <- function(xdat, start = NULL, method = c("nlminb","BFGS"), show = FALS
   names(fitted$std.err) <- names(fitted$estimate) <- c("loc","scale","shape")
   fitted$method <- "auglag"
   fitted$nllh <- mle$value
+  fitted$nobs <- length(xdat)
   fitted$convergence <- mle$convergence
   if(fitted$convergence == 0){ fitted$convergence <- "successful"}
   fitted$counts <- mle$counts
@@ -449,6 +452,7 @@ fitted$convergence <- mle$convergence
 if(fitted$convergence == 0){ fitted$convergence <- "successful"}
 fitted$counts <- mle$counts
 fitted$xdat <- xdat
+fitted$nobs <- length(xdat)
 class(fitted) <- c("mev_rlarg", "mev_gev")
 if(show){
   print(fitted)
@@ -512,6 +516,64 @@ plot.mev_gpd <- function(x, which = 1:2, main, xlab = "Theoretical quantiles", y
   colnames(matlim) <- c("quantile", "lower","upper")
   invisible(matlim)
 }
+
+
+# @param x A fitted object of class \code{mev_gpdbayes}.
+# @param main title for the Q-Q plot #' @param xlab x-axis label
+# @param ylab y-axis label
+# @param ... additional argument passed to \code{matplot}.
+#' @importFrom evd qgpd
+#' @export
+plot.mev_gpdbayes <- function(x, which = 1:2, main, xlab = "Theoretical quantiles", ylab = "Sample quantiles", add = TRUE, ...) {
+  if (!is.vector(x$exceedances)) {
+    stop("Object `x` does not contain `exceedances`, or else the latter is not a vector")
+  }
+  if (!is.numeric(which) || any(which < 1) || any(which > 2)){
+    stop("`which' must be in 1:2")
+  }
+  show <- rep(FALSE, 2)
+  show[which] <- TRUE
+  if(!add){
+    old.par <- par(no.readonly = TRUE)
+    if(sum(show) == 2){
+      par(mfrow = c(1,2), mar = c(5,5,4,1))
+    }
+    on.exit(par(old.par))
+  }
+  if (missing(main)) {
+    main <- c("Probability-probability plot", "Quantile-quantile plot")
+  } else{
+    if(length(main) != sum(show)){
+      stop("Invalid input: `main` must be of the same length as `which`")
+    }
+  }
+
+  dat <- sort(x$exceedances)
+  n <- length(dat)
+  pp_confint_lim <- t(sapply(1:n, function(i) {qbeta(c(0.025, 0.975), i, n - i + 1) }))
+  qq_confint_lim <- apply(pp_confint_lim, 2, function(y){ evd::qgpd(y, loc = 0, scale = x[["estimate"]][1], shape = x[["estimate"]][2])})
+  pobs <- (1:n)/(n + 1)
+  quant <- evd::qgpd(pobs, loc = 0, scale = x[["estimate"]][1], shape = x[["estimate"]][2])
+  if(show[1]){
+    matplot(pobs, cbind(pp_confint_lim,
+                        evd::pgpd(dat, loc = 0, scale = x[["estimate"]][1], shape = x[["estimate"]][2])
+    ), main = main[1], xlab = xlab, ylab = ylab, type = "llp",
+    pch = 20, col = c("grey", "grey", 1), ylim = c(0,1), xlim = c(0,1),
+    lty = c(2, 2, 1), bty = "l", pty = "s", first={abline(0, 1, col="grey")}, ..., add = FALSE)
+  }
+
+  if(show[2]){
+    limqq <- c(0, max(c(quant[n], dat[n])))
+    matplot(quant, cbind(qq_confint_lim, dat), main = main[2], xlab = xlab, ylab = ylab, type = "llp",
+            pch = 20, col = c("grey", "grey", 1), ylim = limqq, xlim = limqq,
+            lty = c(2, 2, 1), bty = "l", pty = "s", first={abline(0, 1, col="grey")}, ..., add = FALSE)
+  }
+
+  matlim <- cbind(quant, qq_confint_lim)
+  colnames(matlim) <- c("quantile", "lower","upper")
+  invisible(matlim)
+}
+
 
 
 # @param x A fitted object of class \code{mev_gev}.
@@ -779,3 +841,133 @@ print.mev_pp <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("\n")
   invisible(x)
 }
+
+
+  # Methods for class "mev_gev", returned by mev::fit.gev()
+
+  #' @export
+  nobs.mev_gev <- function(object, ...) {
+    return(object$nobs)
+  }
+
+  #' @export
+  coef.mev_gev <- function(object, ...) {
+    return(object$estimate)
+  }
+
+  #' @export
+  vcov.mev_gev <- function(object, ...) {
+    return(object$vcov)
+  }
+
+  #' @export
+  logLik.mev_gev <- function(object, ...) {
+    val <- -object$nllh
+    attr(val, "nobs") <- nobs(object)
+    attr(val, "df") <- length(coef(object))
+    class(val) <- "logLik"
+    return(val)
+  }
+
+
+
+  # Methods for class "mev_gpd", returned by mev::fit.gpd()
+
+  #' @export
+  nobs.mev_gpd <- function(object, ...) {
+    return(object$nat)
+  }
+
+  #' @export
+  coef.mev_gpd <- function(object, ...) {
+    return(object$estimate)
+  }
+
+  #' @export
+  vcov.mev_gpd <- function(object, ...) {
+    return(object$vcov)
+  }
+
+  #' @export
+  logLik.mev_gpd <- function(object, ...) {
+    val <- -object$nllh
+    attr(val, "nobs") <- nobs(object)
+    attr(val, "df") <- length(coef(object))
+    class(val) <- "logLik"
+    return(val)
+  }
+
+  #' @export
+  nobs.mev_rlarg <- function(object, ...) {
+    #total number of observations is prod(xdat), so length(xdat)
+    #n by r for a matrix
+    return(object$nobs)
+  }
+
+  #' @export
+  coef.mev_rlarg <- function(object, ...) {
+    return(object$estimate)
+  }
+
+  #' @export
+  vcov.mev_rlarg <- function(object, ...) {
+    return(object$vcov)
+  }
+
+  #' @export
+  logLik.mev_rlarg <- function(object, ...) {
+    val <- -object$nllh
+    attr(val, "nobs") <- nobs(object)
+    attr(val, "df") <- length(coef(object))
+    class(val) <- "logLik"
+    return(val)
+  }
+
+
+  #' @export
+  nobs.mev_pp <- function(object, ...) {
+    return(length(object$xdat))
+  }
+
+  #' @export
+  coef.mev_pp <- function(object, ...) {
+    return(object$estimate)
+  }
+
+  #' @export
+  vcov.mev_pp <- function(object, ...) {
+    return(object$vcov)
+  }
+
+  #' @export
+  logLik.mev_pp <- function(object, ...) {
+    val <- -object$nllh
+    attr(val, "nobs") <- nobs(object)
+    attr(val, "df") <- length(coef(object))
+    class(val) <- "logLik"
+    return(val)
+  }
+
+  #' @export
+  nobs.mev_egp <- function(object, ...) {
+    return(object$nat)
+  }
+
+  #' @export
+  coef.mev_egp <- function(object, ...) {
+    return(object$estimate)
+  }
+
+  #' @export
+  vcov.mev_egp <- function(object, ...) {
+    return(object$vcov)
+  }
+
+  #' @export
+  logLik.mev_egp <- function(object, ...) {
+    val <- -object$nllh
+    attr(val, "nobs") <- nobs(object)
+    attr(val, "df") <- length(coef(object))
+    class(val) <- "logLik"
+    return(val)
+  }

@@ -4,9 +4,17 @@
 \alias{extcoef}
 \title{Estimators of the extremal coefficient}
 \usage{
-extcoef(dat, coord = NULL, thresh = NULL, estimator = c("schlather",
-  "smith", "fmado"), standardize = TRUE, method = c("nonparametric",
-  "parametric"), prob = 0, plot = TRUE, ...)
+extcoef(
+  dat,
+  coord = NULL,
+  thresh = NULL,
+  estimator = c("schlather", "smith", "fmado"),
+  standardize = TRUE,
+  method = c("nonparametric", "parametric"),
+  prob = 0,
+  plot = TRUE,
+  ...
+)
 }
 \arguments{
 \item{dat}{an \code{n} by \code{D} matrix of unit Frechet observations}
@@ -54,6 +62,7 @@ The search for the maximum likelihood estimate for every pair \eqn{A}
 The Schlather estimator is not self-consistent. The Schlather and Tawn estimator includes as special case
 the Smith estimator if we do not censor the data (\code{p = 0}) and do not standardize observations by their harmonic mean.
 
+
 The \bold{F-madogram} estimator is a non-parametric estimate based on a stationary process
 \eqn{Z}; the extremal coefficient satisfies
 \deqn{\theta(h)=\frac{1+2\nu(h)}{1-2\nu(h)},}
@@ -90,7 +99,7 @@ XT.extcoeffun <- function(h, nu, corrfun, ...){
   cbind(h = h, extcoef = 2*pt(sqrt((nu+1)*(1-rhoh)/(1+rhoh)), nu+1))
 }
 #This time, only one graph with theoretical extremal coef
-plot(res$dist, res$schlather, ylim = c(1,2), pch = 20); abline(v = 2, col = 'gray')
+plot(res$dist, res$extcoef, ylim = c(1,2), pch = 20); abline(v = 2, col = 'gray')
 extcoefxt <- XT.extcoeffun(seq(0, 10, by = 0.1), nu = 3,
                             corrfun = function(x){exp(-x/2)})
 lines(extcoefxt[,'h'], extcoefxt[,'extcoef'], type = 'l', col = 'blue', lwd = 2)

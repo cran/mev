@@ -93,7 +93,7 @@ NULL
 NULL
 
 
-#' log likelihood for the generalized Pareto distribution
+#' Log likelihood for the generalized Pareto distribution
 #'
 #' Function returning the density of an \code{n} sample from the GP distribution.
 #' \code{gpd.ll.optim} returns the negative log likelihood parametrized in terms of \code{log(scale)} and shape
@@ -146,7 +146,7 @@ gpd.ll.optim <- function(par, dat, tol = 1e-05) {
 gpd.score <- function(par, dat) {
     sigma = par[1]
     xi = as.vector(par[2])
-    if (!isTRUE(all.equal(0, xi))) {
+    if (!isTRUE(all.equal(0, xi, check.attributes = FALSE))) {
         c(sum(dat * (xi + 1)/(sigma^2 * (dat * xi/sigma + 1)) - 1/sigma), sum(-dat * (1/xi + 1)/(sigma *
             (dat * xi/sigma + 1)) + log(pmax(dat * xi/sigma + 1, 0))/xi^2))
     } else {
@@ -172,7 +172,7 @@ gpd.infomat <- function(par, dat, method = c("obs", "exp"), nobs = length(dat)) 
             stop("Data outside of range specified by parameter, yielding a zero likelihood")
         }
         c11 <- (length(dat) - (1 + xi) * sum(dat * (2 * sigma + xi * dat)/(sigma + xi * dat)^2))/(sigma^2)
-        if (!isTRUE(all.equal(xi, 0))) {
+        if (!isTRUE(all.equal(xi, 0, check.attributes = FALSE))) {
             c12 <- (1 + xi) * sum(dat/(sigma + xi * dat)^2)/xi - sum(dat/(sigma + xi * dat))/(sigma *
                 xi)
             c22 <- (2/xi^2) * sum(dat/(sigma + xi * dat)) - 2 * sum(log(pmax(dat * xi/sigma + 1, 0)))/(xi^3) +
@@ -181,13 +181,15 @@ gpd.infomat <- function(par, dat, method = c("obs", "exp"), nobs = length(dat)) 
             c12 <- sum(-(dat^2 - dat * sigma)/sigma^3)
             c22 <- sum(-1/3 * (2 * dat - 3 * sigma) * dat^2/sigma^3)
         }
-        -matrix(c(c11, c12, c12, c22), nrow = 2, ncol = 2, byrow = TRUE)
+        infomat <- -matrix(c(c11, c12, c12, c22), nrow = 2, ncol = 2, byrow = TRUE)
     } else if (method == "exp") {
         k22 <- -2/((1 + xi) * (1 + 2 * xi))
         k11 <- -1/(sigma^2 * (1 + 2 * xi))
         k12 <- -1/(sigma * (1 + xi) * (1 + 2 * xi))
-        -nobs * cbind(c(k11, k12), c(k12, k22))  #fixed 12-10-2016
+        infomat <- -nobs * cbind(c(k11, k12), c(k12, k22))  #fixed 12-10-2016
     }
+    colnames(infomat) <- rownames(infomat) <- c("scale","shape")
+    return(infomat)
 }
 #' Tangent exponential model statistics for the generalized Pareto distribution
 #'
@@ -220,7 +222,7 @@ gpd.phi <- function(par, dat, V) {
 gpd.dphi <- function(par, dat, V) {
     sigma = par[1]
     xi = as.vector(par[2])
-    if (!isTRUE(all.equal(xi, 0))) {
+    if (!isTRUE(all.equal(xi, 0, check.attributes = FALSE))) {
         rbind(xi * (1/xi + 1)/(sigma^2 * (dat * xi/sigma + 1)) - dat * xi^2 * (1/xi + 1)/(sigma^3 * (dat *
             xi/sigma + 1)^2), -(1/xi + 1)/(sigma * (dat * xi/sigma + 1)) + dat * (xi + 1)/(sigma^2 *
             (dat * xi/sigma + 1)^2) + 1/(sigma * (dat * xi/sigma + 1) * xi)) %*% V
@@ -244,7 +246,7 @@ gev.ll <- function(par, dat) {
     dat <- as.vector(dat)
     par <- as.vector(par)
     tx <- pmax(1 + par[3]/par[2] * (dat - par[1]), 0)
-    if (!isTRUE(all.equal(as.vector(par[3]), 0, tolerance = 1e-07))) {
+    if (!isTRUE(all.equal(as.vector(par[3]), 0, tolerance = 1e-07, check.attributes = FALSE))) {
         sum(-log(par[2]) - (1/par[3] + 1) * log(tx) - tx^(-1/par[3]))
     } else {
         sum(-log(par[2]) - (dat - par[1])/par[2] - exp(-(dat - par[1])/par[2]))
@@ -272,7 +274,7 @@ gev.score <- function(par, dat) {
     mu = par[1]
     sigma = par[2]
     xi = as.vector(par[3])
-    if (!isTRUE(all.equal(xi, 0, tolerance = 1e-10))) {
+    if (!isTRUE(all.equal(xi, 0, tolerance = 1e-10, check.attributes = FALSE))) {
         c(sum(-(pmax(0, -(mu - dat) * xi/sigma + 1))^(-1/xi - 1)/sigma - xi * (1/xi + 1)/(sigma * ((mu -
             dat) * xi/sigma - 1))),
           sum(-(dat - mu) * ((dat - mu) * xi/sigma + 1)^(-1/xi - 1)/sigma^2 +
@@ -354,7 +356,7 @@ gev.infomat <- function(par, dat, method = c("obs", "exp"), nobs = length(dat)) 
             stop("Data outside of range specified by parameter, yielding a zero likelihood")
         }
         infomat <- matrix(0, ncol = 3, nrow = 3)
-        if (!isTRUE(all.equal(xi, 0))) {
+        if (!isTRUE(all.equal(xi, 0, check.attributes = FALSE))) {
             infomat[1, 1] <- sum(-((dat - mu) * xi/sigma + 1)^(-1/xi - 2) * (xi + 1)/sigma^2 + xi^2 *
                 (1/xi + 1)/(sigma^2 * ((dat - mu) * xi/sigma + 1)^2))
             infomat[1, 2] <- infomat[2, 1] <- sum(-(dat - mu) * ((dat - mu) * xi/sigma + 1)^(-1/xi -
@@ -691,7 +693,7 @@ gpde.infomat <- function(par, dat, m, method = c("obs", "exp"), nobs = length(da
                            12*es^3 + 4*(20*dat^3 - 57*dat^2*es + 42*dat*es^2 - 3*es^3)*log(m)^2 +
                            8*(5*dat^3 - 18*dat^2*es + 18*dat*es^2 - 3*es^3)*log(m))/(es^3*log(m)^2 + 2*es^3*log(m) + es^3))
       }
-        return(cbind(c(k11, k12), c(k12, k22)))
+        infomat <- cbind(c(k11, k12), c(k12, k22))
     } else if (method == "exp") {
         sigmae = ifelse(!xizero, es * (1 - xi) * xi/(m^xi - 1 + xi), es/(log(m)+1))
         if(!xizero){
@@ -700,9 +702,11 @@ gpde.infomat <- function(par, dat, m, method = c("obs", "exp"), nobs = length(da
         } else{
          Jac <-  rbind(c(1/(logm+1), -1/2*(log(m)^2 + 2*log(m) + 2)*es/(log(m)^2 + 2*log(m) + 1)), c(0, 1))
         }
-        return(t(Jac) %*% gpd.infomat(par = c(sigmae, xi), dat = dat, method = "exp", nobs = nobs) %*%
-            Jac)
+        infomat <- t(Jac) %*% gpd.infomat(par = c(sigmae, xi), dat = dat, method = "exp", nobs = nobs) %*%
+            Jac
     }
+    colnames(infomat) <- rownames(infomat) <- c("es","shape")
+    return(infomat)
 }
 #' Tangent exponential model statistics for the generalized Pareto distribution (expected shortfall)
 #'
@@ -854,12 +858,12 @@ gpdr.infomat <- function(par, dat, m, method = c("obs", "exp"), nobs = length(da
         info[2, 1] <- info[1, 2] <- sum(-dat^2 * (m^xi - 1) * m^xi * (1/xi + 1) * logm/((dat * (m^xi -
             1)/r + 1)^2 * r^3) + dat * m^xi * (1/xi + 1) * logm/((dat * (m^xi - 1)/r + 1) * r^2) -
             dat * (m^xi - 1)/((dat * (m^xi - 1)/r + 1) * r^2 * xi^2))
-        return(-info)
+        infomat <- -info
       } else{
         k11 <- sum((2*dat*r*log(m) - r^2))/r^4
         k12 <- 0.5*sum((2*dat*log(m) - r*log(m) - 2*r)*dat)*log(m)/r^3
         k22 <- sum((8*dat^3*log(m)^3 - r^3*log(m)^2 + 4*(dat*log(m)^3 + 3*dat*log(m)^2)*r^2 - 12*(dat^2*log(m)^3 + dat^2*log(m)^2)*r)/(12*r^3))
-        return(matrix(c(k11, k12, k12, k22), byrow = TRUE, ncol = 2, nrow = 2))
+        infomat <- matrix(c(k11, k12, k12, k22), byrow = TRUE, ncol = 2, nrow = 2)
       }
     } else if (method == "exp") {
         sigmar <- ifelse(!xizero, r * xi/(m^xi - 1), r/logm)
@@ -868,9 +872,10 @@ gpdr.infomat <- function(par, dat, m, method = c("obs", "exp"), nobs = length(da
         } else{
           Jac <-  rbind(c(1/logm, -0.5*r), c(0, 1))
         }
-        return(t(Jac) %*% gpd.infomat(par = c(sigmar, xi), method = "exp", dat = dat, nobs = length(dat)) %*% Jac)
+        infomat <- t(Jac) %*% gpd.infomat(par = c(sigmar, xi), method = "exp", dat = dat, nobs = length(dat)) %*% Jac
     }
-
+    colnames(infomat) <- rownames(infomat) <- c("retlev","shape")
+    return(infomat)
 }
 
 #' Tangent exponential model statistics for the generalized Pareto distribution (return level)
@@ -1080,23 +1085,23 @@ gevr.infomat <- function(par, dat, method = c("obs", "exp"), p, nobs = length(da
     log1mp <- log(1 - p)
     logmlog1mp <- log(-log1mp)
     if (method == "obs") {
-        infomat <- matrix(0, ncol = 3, nrow = 3)
+        info <- matrix(0, ncol = 3, nrow = 3)
         if(abs(xi) > 1e-4){
-        infomat[1, 1] <- sum(-(xi * (-log1mp)^(2 * xi) - (xi^2 * (-log1mp)^(2 * xi) + xi *
+        info[1, 1] <- sum(-(xi * (-log1mp)^(2 * xi) - (xi^2 * (-log1mp)^(2 * xi) + xi *
             (-log1mp)^(2 * xi)) * ((dat * xi * (-log1mp)^xi - xi * z * (-log1mp)^xi +
             sigma)/(sigma * (-log1mp)^xi))^(1/xi) + (-log1mp)^(2 * xi))/((dat^2 * xi^2 * (-log1mp)^(2 * xi) +
              xi^2 * z^2 * (-log1mp)^(2 * xi) + 2 * sigma * dat * xi * (-log1mp)^xi +
             sigma^2 - 2 * (dat * xi^2 * (-log1mp)^(2 * xi) + sigma * xi * (-log1mp)^xi) * z) *
             ((dat * xi * (-log1mp)^xi - xi * z * (-log1mp)^xi + sigma)/(sigma * (-log1mp)^xi))^(1/xi)))
 
-        infomat[1, 2] <- infomat[2, 1] <- sum(-(dat * (-log1mp)^(2 * xi) - z * (-log1mp)^(2 *
+        info[1, 2] <- info[2, 1] <- sum(-(dat * (-log1mp)^(2 * xi) - z * (-log1mp)^(2 *
             xi) - sigma * (-log1mp)^xi + (sigma * xi * (-log1mp)^xi + sigma * (-log1mp)^xi) *
             ((dat * xi * (-log1mp)^xi - xi * z * (-log1mp)^xi + sigma)/(sigma * (-log1mp)^xi))^(1/xi))/
               ((sigma * dat^2 * xi^2 * (-log1mp)^(2 * xi) + sigma * xi^2 * z^2 *
             (-log1mp)^(2 * xi) + 2 * sigma^2 * dat * xi * (-log1mp)^xi + sigma^3 - 2 * (sigma *
             dat * xi^2 * (-log1mp)^(2 * xi) + sigma^2 * xi * (-log1mp)^xi) * z) * ((dat * xi *
             (-log1mp)^xi - xi * z * (-log1mp)^xi + sigma)/(sigma * (-log1mp)^xi))^(1/xi)))
-        infomat[1, 3] <- infomat[3, 1] <- sum(-((sigma * (-log1mp)^xi * logmlog1mp - dat *
+        info[1, 3] <- info[3, 1] <- sum(-((sigma * (-log1mp)^xi * logmlog1mp - dat *
             (-log1mp)^(2 * xi)) * xi^2 + (sigma * (-log1mp)^xi * logmlog1mp - dat *
             (-log1mp)^(2 * xi)) * xi + (xi^2 * (-log1mp)^(2 * xi) + xi * (-log1mp)^(2 *
             xi)) * z - (sigma * xi^3 * (-log1mp)^xi * logmlog1mp + xi^2 * z *
@@ -1108,7 +1113,7 @@ gevr.infomat <- function(par, dat, method = c("obs", "exp"), p, nobs = length(da
             xi^4 * z^2 * (-log1mp)^(2 * xi) + 2 * sigma * dat * xi^3 * (-log1mp)^xi + sigma^2 *
             xi^2 - 2 * (dat * xi^4 * (-log1mp)^(2 * xi) + sigma * xi^3 * (-log1mp)^xi) * z) *
             ((dat * xi * (-log1mp)^xi - xi * z * (-log1mp)^xi + sigma)/(sigma * (-log1mp)^xi))^(1/xi)))
-        infomat[2, 2] <- sum((dat^2 * xi * (-log1mp)^(2 * xi) + (xi * (-log1mp)^(2 * xi) -
+        info[2, 2] <- sum((dat^2 * xi * (-log1mp)^(2 * xi) + (xi * (-log1mp)^(2 * xi) -
             (-log1mp)^(2 * xi)) * z^2 - dat^2 * (-log1mp)^(2 * xi) + 2 * sigma * dat * (-log1mp)^xi -
               2 * (dat * xi * (-log1mp)^(2 * xi) - dat * (-log1mp)^(2 * xi) + sigma *
             (-log1mp)^xi) * z - (dat^2 * xi * (-log1mp)^(2 * xi) + xi * z^2 * (-log1mp)^(2 *
@@ -1119,7 +1124,7 @@ gevr.infomat <- function(par, dat, method = c("obs", "exp"), p, nobs = length(da
             (-log1mp)^xi + sigma^4 - 2 * (sigma^2 * dat * xi^2 * (-log1mp)^(2 * xi) + sigma^3 *
             xi * (-log1mp)^xi) * z) * ((dat * xi * (-log1mp)^xi - xi * z * (-log1mp)^xi +
             sigma)/(sigma * (-log1mp)^xi))^(1/xi)))
-        infomat[3, 2] <- infomat[2, 3] <- sum(-((sigma * dat * (-log1mp)^xi * logmlog1mp -
+        info[3, 2] <- info[2, 3] <- sum(-((sigma * dat * (-log1mp)^xi * logmlog1mp -
             dat^2 * (-log1mp)^(2 * xi)) * xi^2 - (xi^2 * (-log1mp)^(2 * xi) + xi *
             (-log1mp)^(2 * xi)) * z^2 + (sigma * dat * (-log1mp)^xi * logmlog1mp - dat^2 *
             (-log1mp)^(2 * xi)) * xi - ((sigma * (-log1mp)^xi * logmlog1mp - 2 * dat * (-log(-p +
@@ -1137,7 +1142,7 @@ gevr.infomat <- function(par, dat, method = c("obs", "exp"), p, nobs = length(da
               (-log1mp)^xi + sigma^3 * xi^2 - 2 * (sigma * dat * xi^4 * (-log1mp)^(2 * xi) + sigma^2 * xi^3 *
             (-log1mp)^xi) * z) * ((dat * xi * (-log1mp)^xi - xi * z * (-log1mp)^xi + sigma)/(sigma *
             (-log1mp)^xi))^(1/xi)))
-        infomat[3, 3] <- sum((sigma * dat * xi^4 * (-log1mp)^xi * logmlog1mp^2 + (4 * sigma *
+        info[3, 3] <- sum((sigma * dat * xi^4 * (-log1mp)^xi * logmlog1mp^2 + (4 * sigma *
             dat * (-log1mp)^xi * logmlog1mp - 3 * dat^2 * (-log1mp)^(2 * xi)) * xi^3 +
             (2 * sigma * dat * (-log1mp)^xi * (logmlog1mp - 1) - (logmlog1mp^2 - 2 *
                 logmlog1mp) * sigma^2 - dat^2 * (-log1mp)^(2 * xi)) * xi^2 - (3 * xi^3 *
@@ -1173,30 +1178,31 @@ gevr.infomat <- function(par, dat, method = c("obs", "exp"), p, nobs = length(da
            (-log1mp)^(2 * xi) + sigma * xi^5 * (-log1mp)^xi) * z) * ((dat * xi * (-log1mp)^xi -
             xi * z * (-log1mp)^xi + sigma)/(sigma * (-log1mp)^xi))^(1/xi)))
         } else{ #xi numerically zero
-          infomat[1, 1] <- sum(( exp((-dat + z)/sigma)*log1mp))/sigma^2
-          infomat[1, 2] <- sum(-((sigma + exp((-dat + z)/sigma)*(sigma - dat + z)*log1mp)))/sigma^3
-          infomat[2, 1] <- infomat[1, 2]
-          infomat[1, 3] <- sum((1/(2*sigma^3))*((2* exp(dat/sigma)* sigma*(sigma - dat + z + sigma*logmlog1mp) +  exp(z/sigma)* log1mp*((dat - z)*(-2*sigma + dat - z) + 2*sigma*(sigma - dat + z)* logmlog1mp))/ exp(dat/sigma)))
-          infomat[3, 1] <- infomat[1, 3]
-          infomat[2, 2] <- sum(sigma*(sigma - 2*dat + 2*z) + exp((-dat + z)/sigma)*(dat - z)*(-2*sigma + dat - z) * log1mp)/sigma^4
-          infomat[2, 3] <- sum((1/(2*sigma^4))*(((dat - z)*(2*exp(dat/sigma)*sigma*(sigma - dat + z + sigma*logmlog1mp) +   exp(z/sigma)*  log1mp*((dat - z)*(-2*sigma + dat - z) +   2*sigma*(sigma - dat + z)* logmlog1mp)))/exp(dat/sigma)))
-          infomat[3, 2] <- infomat[2, 3]
-          infomat[3, 3] <- sum((1/(12*sigma^4))*((dat - z)*(4*sigma*((dat - z)*(3*sigma - 2*dat + 2*z) - 3*sigma*logmlog1mp*(2*(sigma - dat + z) + sigma*logmlog1mp)) +  exp((-dat + z)/sigma)*log1mp*((-8*sigma + 3*dat - 3*z)*(dat - z)^2 + 12*sigma*logmlog1mp*((dat - z)*(2*sigma - dat + z) - sigma*(sigma - dat + z)*logmlog1mp)))))
+          info[1, 1] <- sum(( exp((-dat + z)/sigma)*log1mp))/sigma^2
+          info[1, 2] <- sum(-((sigma + exp((-dat + z)/sigma)*(sigma - dat + z)*log1mp)))/sigma^3
+          info[2, 1] <- info[1, 2]
+          info[1, 3] <- sum((1/(2*sigma^3))*((2* exp(dat/sigma)* sigma*(sigma - dat + z + sigma*logmlog1mp) +  exp(z/sigma)* log1mp*((dat - z)*(-2*sigma + dat - z) + 2*sigma*(sigma - dat + z)* logmlog1mp))/ exp(dat/sigma)))
+          info[3, 1] <- info[1, 3]
+          info[2, 2] <- sum(sigma*(sigma - 2*dat + 2*z) + exp((-dat + z)/sigma)*(dat - z)*(-2*sigma + dat - z) * log1mp)/sigma^4
+          info[2, 3] <- sum((1/(2*sigma^4))*(((dat - z)*(2*exp(dat/sigma)*sigma*(sigma - dat + z + sigma*logmlog1mp) +   exp(z/sigma)*  log1mp*((dat - z)*(-2*sigma + dat - z) +   2*sigma*(sigma - dat + z)* logmlog1mp)))/exp(dat/sigma)))
+          info[3, 2] <- info[2, 3]
+          info[3, 3] <- sum((1/(12*sigma^4))*((dat - z)*(4*sigma*((dat - z)*(3*sigma - 2*dat + 2*z) - 3*sigma*logmlog1mp*(2*(sigma - dat + z) + sigma*logmlog1mp)) +  exp((-dat + z)/sigma)*log1mp*((-8*sigma + 3*dat - 3*z)*(dat - z)^2 + 12*sigma*logmlog1mp*((dat - z)*(2*sigma - dat + z) - sigma*(sigma - dat + z)*logmlog1mp)))))
         }
-        return(-infomat)
+        infomat <- -info
         # else expected information matrix
     } else {
         muf = z + sigma/xi * (1 - (-log(1 - p))^(-xi))
-        if (!isTRUE(all.equal(xi, 0, tolerance = 1e-07))) {
+        if (!isTRUE(all.equal(xi, 0, tolerance = 1e-07, check.attributes = FALSE))) {
             Jac <- rbind(c(1, -((-log1mp)^(-xi) - 1)/xi, sigma * (-log1mp)^(-xi) * log(-log1mp)/xi +
                              sigma * ((-log1mp)^(-xi) - 1)/xi^2), c(0, 1, 0), c(0, 0, 1))
         } else {
             Jac <- rbind(c(1, log(-log1mp), -sigma * log(-log1mp)^2 + 1/2 * sigma * (-log1mp)^(-xi)
                            * log(-log1mp)^2), c(0, 1, 0), c(0, 0, 1))
         }
-        return(t(Jac) %*% gev.infomat(dat = dat, method = "exp", par = c(muf, sigma, xi)) %*% Jac)
-
+        infomat <- t(Jac) %*% gev.infomat(dat = dat, method = "exp", par = c(muf, sigma, xi)) %*% Jac
     }
+    colnames(infomat) <- rownames(infomat) <- c("retlev","scale","shape")
+    return(infomat)
 }
 
 
@@ -1375,8 +1381,7 @@ gpdN.infomat <- function(par, dat, N, method = c("obs", "exp"), nobs = length(da
                                6*psigamma(1 + N)^2 - 6*psigamma(1 + N, deriv = 1)))/
                            (12*(euler_gamma + psigamma(1 + N))^2)), c(0,1))
       }
-        return(t(Jac) %*% gpd.infomat(par = c(sigmaf, xi), dat = dat, method = "exp") %*% Jac)
-
+        infomat <- t(Jac) %*% gpd.infomat(par = c(sigmaf, xi), dat = dat, method = "exp") %*% Jac
     } else if (method == "obs") {
         # Observed information
         if(!xizero){
@@ -1427,8 +1432,10 @@ gpdN.infomat <- function(par, dat, N, method = c("obs", "exp"), nobs = length(da
                     (2 + 3*euler_gamma)*pi^2)*z^2 - (2*euler_gamma^2 + pi^2)*z^3) +6*euler_gamma*z*(3*dat^2*euler_gamma - dat*(2 + 3*euler_gamma)*z + z^2)*
                     psigammap1pN - 2*z^2*(-2*dat*euler_gamma + z)*(psigammapp1pN + 2*zeta3))))/(144*z^3*(psigamma1pN + euler_gamma)^2))
         }
-        return(cbind(c(k11, k12), c(k12, k22)))
+        infomat <- cbind(c(k11, k12), c(k12, k22))
     }
+    colnames(infomat) <- rownames(infomat) <- c("Nmean","shape")
+    return(infomat)
 }
 
 #' Tangent exponential model statistics for the generalized Pareto distribution (mean of maximum of N exceedances parametrization)
@@ -1527,7 +1534,7 @@ gevN.ll <- function(par, dat, N, q = 0.5, qty = c("mean", "quantile")) {
     mu = par[1]
     z = par[2]
     xi = as.vector(par[3])
-    if (!isTRUE(all.equal(xi, 0))) {
+    if (!isTRUE(all.equal(xi, 0, check.attributes = FALSE))) {
         sigma <- switch(qty,
                         quantile = (z - mu) * xi/(N^xi * (log(1/q))^(-xi) - 1),
                         mean = (z - mu) * xi/(N^xi * gamma(1 - xi) - 1))
@@ -1640,7 +1647,7 @@ gevN.infomat <- function(par, dat, method = c("obs", "exp"), qty = c("mean", "qu
     log1q = log(1/q)
     loglog1q = log(log1q)
     qty <- match.arg(qty)
-    xizero <- isTRUE(all.equal(xi, 0, tolerance = 1e-05))
+    xizero <- isTRUE(all.equal(xi, 0, tolerance = 1e-05, check.attributes = FALSE))
     euler_gamma <- 0.57721566490153231044
     zeta3 <- 1.2020569031595944587
     if (qty == "mean") {
@@ -1810,25 +1817,26 @@ gevN.infomat <- function(par, dat, method = c("obs", "exp"), qty = c("mean", "qu
                         10*euler_gamma^4*(mu - dat)*(dat - z)*  (mu - 2*dat + z) +  2*euler_gamma^3*(mu - z)*(mu^2 + 12*dat^2 - 12*dat*z + z^2 + 2*mu*(-6*dat + 5*z)) +
                           4*(mu - z)^3*zeta3 - euler_gamma*(mu - z)^2*(pi^2*(mu - 2*dat + z) + 8*(mu - dat)*zeta3)))))/  (144*(mu - z)^4*(euler_gamma + logN)^2))
           }
-            return(cbind(c(k11, k12, k13), c(k12, k22, k23), c(k13, k23, k33)))
+            infomat <- cbind(c(k11, k12, k13), c(k12, k22, k23), c(k13, k23, k33))
         } else if (method == "exp") {
             if (!xizero) {
                 Jac <- rbind(c(1, 0, 0), c(-xi/(N^xi * gamma(-xi + 1) - 1), xi/(N^xi * gamma(-xi + 1) -
                   1), (N^xi * logN * gamma(-xi + 1) - N^xi * psigamma(-xi + 1) * gamma(-xi + 1)) *
                   (mu - z) * xi/(N^xi * gamma(-xi + 1) - 1)^2 - (mu - z)/(N^xi * gamma(-xi + 1) - 1)),
                   c(0, 0, 1))
-                return(t(Jac) %*% gev.infomat(par = c(mu, sigmaq, xi), method = "exp", nobs = nobs) %*%
-                  Jac)
+               infomat <- t(Jac) %*% gev.infomat(par = c(mu, sigmaq, xi), method = "exp", nobs = nobs) %*%
+                  Jac
             } else {
                 Jac <- rbind(c(1, 0, 0), c(-1/(euler_gamma + logN), 1/(euler_gamma + logN), 1/12 *
                   (6 * euler_gamma^2 + pi^2 + 12 * euler_gamma * logN + 6 * logN^2) * (mu - z)/(euler_gamma +
                   logN)^2), c(0, 0, 1))
 
-                return(t(Jac) %*% gev.infomat(par = c(mu, sigmaq, 0), method = "exp", nobs = nobs) %*%
-                  Jac)
+                infomat <- t(Jac) %*% gev.infomat(par = c(mu, sigmaq, 0), method = "exp", nobs = nobs) %*%
+                  Jac
 
             }
         }
+      colnames(infomat) <- rownames(infomat) <- c("loc","Nmean","shape")
     } else if (qty == "quantile") {
         if (!xizero) {
             # z = mu + sigma/xi*(N^xi*log(1/q)^(-xi)-1)
@@ -1951,25 +1959,25 @@ gevN.infomat <- function(par, dat, method = c("obs", "exp"), qty = c("mean", "qu
                                  (8*(mu - dat)*(dat - z)*(mu - 2*dat + z)*(-logN + loglog1q)^3)/(mu - z)^3))
 
           }
-            return(cbind(c(k11, k12, k13), c(k12, k22, k23), c(k13, k23, k33)))
-
+            infomat <- cbind(c(k11, k12, k13), c(k12, k22, k23), c(k13, k23, k33))
         } else if (method == "exp") {
             if (!xizero) {
                 Jac <- rbind(c(1, 0, 0), c(-xi/(N^xi * log1q^(-xi) - 1), xi/(N^xi * log1q^(-xi) -
                   1), (N^xi * log1q^(-xi) * logN - N^xi * log1q^(-xi) * loglog1q) * (mu -
                   z) * xi/(N^xi * log1q^(-xi) - 1)^2 - (mu - z)/(N^xi * log1q^(-xi) - 1)), c(0,
                   0, 1))
-                return(t(Jac) %*% gev.infomat(par = c(mu, sigmaq, xi), method = "exp", nobs = nobs) %*%
-                  Jac)
+               infomat <- t(Jac) %*% gev.infomat(par = c(mu, sigmaq, xi), method = "exp", nobs = nobs) %*%
+                  Jac
             } else {
                 Jac <- rbind(c(1, 0, 0), c(-1/(logN - log(-log(q))), 1/(logN - log(-log(q))), 1/2 *
                   (mu - z)), c(0, 0, 1))
-                return(t(Jac) %*% gev.infomat(par = c(mu, sigmaq, 0), method = "exp", nobs = nobs) %*%
-                  Jac)
+               infomat <- t(Jac) %*% gev.infomat(par = c(mu, sigmaq, 0), method = "exp", nobs = nobs) %*%
+                  Jac
             }
         }
+      colnames(infomat) <- rownames(infomat) <- c("loc","Nquant","shape")
     }
-
+    return(infomat)
 }
 
 
@@ -2148,23 +2156,23 @@ rrlarg <- function(n, r, loc, scale, shape){
   if(r == 1){
    U <- matrix(U, ncol = 1, nrow = n)
   }
-  if(!isTRUE(all.equal(shape, 0))){
+  if(!isTRUE(all.equal(shape, 0, check.attributes = FALSE))){
    loc + scale*(U^(-shape)-1)/shape
   } else{
    loc - log(U)*scale
   }
 }
 
-#' Distribution of the r-largest observations
+#' @title Distribution of the r-largest observations
 #'
-#' Likelihood, score function and information matrix for the r-largest observations likelihood.
+#' @description Likelihood, score function and information matrix for the r-largest observations likelihood.
 #'
 #' @author Leo Belzile
 #' @name rlarg
 #' @param par vector of \code{loc}, \code{scale} and \code{shape}
 #' @param dat an \code{n} by \code{r} sample matrix, ordered from largest to smallest in each row
 #' @param method string indicating whether to use the expected  (\code{'exp'}) or the observed (\code{'obs'} - the default) information matrix.
-#' @param nobs number of observations for the expected information matrix. Default to \code{length(dat)} if \code{dat} is provided.
+#' @param nobs number of observations for the expected information matrix. Default to \code{nrow(dat)} if \code{dat} is provided.
 #' @param r number of order statistics kept. Default to \code{ncol(dat)}
 #' @section Usage:
 #' \preformatted{
@@ -2181,13 +2189,16 @@ rrlarg <- function(n, r, loc, scale, shape){
 #' }
 #' @references Coles, S. (2001). \emph{An Introduction to Statistical Modeling of Extreme Values}, Springer, 209 p.
 #' @references Smith, R.L. (1986).  Extreme value theory based on the r largest annual events, \emph{Journal of Hydrology}, \bold{86}(1-2), 27--43, \code{http://dx.doi.org/10.1016/0022-1694(86)90004-1}.
+#'
 NULL
 
 
 #' Log-likelihood of the point process of r-largest observations
 #'
-#' @param par a vector of location, scale and shape parameter
-#' @param dat an \code{n} by \code{r} matrix of observations, ordered from largest to smallest in each row.
+#' The function returns the log-likelihood for an \code{n} by \code{r} matrix of observations.
+#'
+#' @inheritParams rlarg
+#' @seealso \code{\link{rlarg}}
 #' @export
 #' @keywords internal
 rlarg.ll <- function(par, dat){
@@ -2205,11 +2216,14 @@ rlarg.ll <- function(par, dat){
     -sum(exp((par[1]-dat[,r])/par[2])) - n*r*log(par[2]) - sum((dat-par[1])/par[2])
   }
 }
+
 #' Score of the r-largest observations
 #'
 #' The score is computed via linear interpolation for the shape parameter in a neighborhood of zero
-#' @inheritParams rlarg.ll
-#' @return a vector of size 3
+#'
+#' @inheritParams rlarg
+#' @seealso \code{\link{rlarg}}
+#' @return score vector of size 3
 #' @export
 #' @keywords internal
 rlarg.score <- function(par, dat){
@@ -2253,12 +2267,26 @@ rlarg.score <- function(par, dat){
 #' Information matrix for the r-largest observations.
 #'
 #' The function returns the expected or observed information matrix.
-#' @seealso \code{\link{rlarg}}
+#'
 #' @inheritParams rlarg
-#' @rdname rlarg
+#' @seealso \code{\link{rlarg}}
 #' @export
 #' @keywords internal
 rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), r = ncol(dat)){
+  if(!missing(dat)){
+    if(is.vector(dat)){
+      dat <- as.matrix(dat, ncol = 1)
+    }
+    if(nobs != nrow(dat)){
+      warning("Overriding value of `nobs` provided by the user")
+      nobs <- nrow(dat)
+    }
+    if(r != ncol(dat)){
+      warning("Overriding value of `r` provided by the user")
+      r <- ncol(dat)
+    }
+  }
+  method <- match.arg(method)
   eta <- par[1]
   tau <- par[2]
   xi <- par[3]
@@ -2274,9 +2302,7 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
       m23a <- (1/(tau*xi^3*gamma(r)))*((r + xi*(2 + xi))*gamma(r + 2*xi) +
                                          gamma(1 + r)*(1 + xi*digamma(1 + r)) - gamma(r + xi)*(2*r + xi*(2 + xi) +
                                                                                                  xi*(r + xi)*digamma(1 + r + xi)))
-
-
-    } else{
+      } else{
       m12a <- (1 + r*digamma(r))/tau^2
       m13a <- -((digamma(r)*(2 + r*digamma(r)) + r*psigamma(deriv = 1, r))/(2*tau))
       m22a <- -((1 + digamma(r)*(2 + r*digamma(r)) + r*psigamma(deriv = 1, r))/tau^2)
@@ -2296,7 +2322,7 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
     }
     ma <- matrix(c(m11a, m12a, m13a, m12a, m22a, m23a, m13a, m23a, m33a), nrow = 3, ncol = 3)
     if(r == 1L){
-      return(nobs*ma)
+      infomat <- -nobs*ma
     } else if(r > 1L){
       if(!xizero){
         m11b <- -((xi^2*gamma(r + 2*xi))/(tau^2*(1 + 2*xi)*gamma(r)))
@@ -2315,17 +2341,14 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
         m33b <- -2 + 2*digamma(r) - digamma(r)^2 - psigamma(deriv = 1, r)
       }
       mb <- matrix(c(m11b, m12b, m13b, m12b, m22b, m23b, m13b, m23b, m33b), nrow = 3, ncol = 3)
-      return(-nobs*(ma + (r-1)*mb))
+      infomat <- -nobs*(ma + (r-1)*mb)
     }
-
   } else if(method == "obs"){
     #Partial check for ordering in first column
     if(!isTRUE(all(dat[1,1] >= dat[1,]))){
       stop("Observations in `dat` must be ordered from largest to smallest in each row.")
     }
     #Observed information matrix
-    dat <- as.matrix(dat)
-    r <- ncol(dat)
     yr <- dat[,r]
 
     if(!xizero){
@@ -2345,8 +2368,8 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
       d330a <- sum(1/12*(4*(3*eta + 2*tau)*yr^3*exp(eta/tau) - 3*yr^4*exp(eta/tau) - 6*(3*eta^2 + 4*eta*tau)*yr^2*exp(eta/tau) + 12*(eta^3 + 2*eta^2*tau)*yr*exp(eta/tau) - (3*eta^4 + 8*eta^3*tau)*exp(eta/tau) + 4*(2*eta^3*r*tau - 2*r*tau*yr^3 + 3*eta^2*tau^2 + 3*(2*eta*r*tau + tau^2)*yr^2 - 6*(eta^2*r*tau + eta*tau^2)*yr)*exp(yr/tau))*exp(-yr/tau)/tau^4)
       da <- - matrix(c(d110a, d120a, d130a, d120a, d220a, d230a, d130a, d230a, d330a), nrow = 3, ncol = 3)
     }
-    if(r == 1){
-      return(da)
+    if(r == 1L){
+      infomat <- da
     } else if(r > 1){
       y <- dat[,-r]
       if(!xizero){
@@ -2365,14 +2388,16 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
         d33b <- sum(1/3*(3*eta^2*tau + 3*(2*eta + tau)*y^2 - 2*y^3 + 6*eta^2*yr - 6*eta*yr^2 + 2*yr^3 - 6*(eta^2 + eta*tau)*y)/tau^3)
       }
       db <-  - matrix(c(d11b, d12b, d13b, d12b, d22b, d23b, d13b, d23b, d33b), nrow = 3, ncol = 3)
-      return(da + db)
+      infomat <- da + db
     }
   }
+  colnames(infomat) <- rownames(infomat) <- c("loc","scale","shape")
+  return(infomat)
 }
 
-#' Poisson process of extremes.
+#' @title Poisson process of extremes.
 #'
-#' Likelihood, score function and information matrix for the Poisson process likelihood.
+#' @description Likelihood, score function and information matrix for the Poisson process likelihood.
 #'
 #' @author Leo Belzile
 #' @name pp
@@ -2380,8 +2405,7 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
 #' @param dat sample vector
 #' @param u threshold
 #' @param method string indicating whether to use the expected  (\code{'exp'}) or the observed (\code{'obs'} - the default) information matrix.
-#' @param np number of periods of observations. This is a \emph{post hoc} adjustment for the intensity so that the parameters of the model coincide
-#' with those of a generalized extreme value distribution with block size \code{length(dat)/np}.
+#' @param np number of periods of observations. This is a \emph{post hoc} adjustment for the intensity so that the parameters of the model coincide with those of a generalized extreme value distribution with block size \code{length(dat)/np}.
 #' @param nobs number of observations for the expected information matrix. Default to \code{length(dat)} if \code{dat} is provided.
 #' @section Usage:
 #' \preformatted{pp.ll(par, dat)
@@ -2397,16 +2421,24 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
 #' }
 #' @references Coles, S. (2001). \emph{An Introduction to Statistical Modeling of Extreme Values}, Springer, 209 p.
 #' @references Wadsworth, J.L. (2016). Exploiting Structure of Maximum Likelihood Estimators for Extreme Value Threshold Selection, \emph{Technometrics}, \bold{58}(1), 116-126, \code{http://dx.doi.org/10.1080/00401706.2014.998345}.
-#'
+#' @references Sharkey, P. and J.A. Tawn (2017). A Poisson process reparameterisation for Bayesian inference for extremes, \emph{Extremes}, \bold{20}(2), 239-263, \code{http://dx.doi.org/10.1007/s10687-016-0280-2}.
 NULL
 
 
 
 #Poisson likelihood
 
-#' Poisson process log-likelihood
+#' Log-likelihood of Poisson process of threshold exceedances
+#'
+#' This function returns the log-likelihood of the non-homogeneous Poisson process
+#' of exceedances above threshold \code{u}, adjusted so that there are \code{np} periods
+#' of observations.
+#'
 #' @export
-#' @rdname pp
+#' @seealso \code{\link{pp}}
+#' @inheritParams pp
+#' @return log-likelihood of the NHPP
+#' @keywords internal
 pp.ll <- function(par, dat, u, np = 1){
   par <- as.vector(par)
   if(abs(par[3]) > 1e-6){
@@ -2418,12 +2450,14 @@ pp.ll <- function(par, dat, u, np = 1){
   }
 }
 
-#' Score vector for the Poisson process above u
+#' @title Score vector for the Poisson process of threshold exceedances
 #'
-#' @seealso \code{\link{pp}}
-#' @inheritParams pp
+#' Returns the score vector of the NHPP.
+#'
 #' @export
-#' @rdname pp
+#' @inheritParams pp
+#' @seealso \code{\link{pp}}
+#' @return score vector of NHPP
 #' @keywords internal
 pp.score <- function(par, dat, u, np = 1){
   mu <- par[1]; sigma <- par[2]; xi <- par[3]; nu <- length(dat)
@@ -2440,25 +2474,36 @@ pp.score <- function(par, dat, u, np = 1){
 #' The function returns the expected or observed information matrix.
 #'
 #' @note For the expected information matrix, the number of points above the threshold is random, but should correspond to
-#' \code{np}\eqn{\Lambda}. In this sense, unless \code{np} is linear in the sample size, the
+#' \code{np}\eqn{\Lambda}. The parametrization for \code{np} is shared between \code{fit.pp}, \code{pp.ll}, etc.
+#' The entries for the information matrix are given in Sharkey and Tawn (2017), but contains some typos which were corrected.
 #'
-#' @seealso \code{\link{pp}}
-#' @inheritParams pp
 #' @export
-#' @rdname pp
+#' @inheritParams pp
+#' @seealso \code{\link{pp}}
+#' @return information matrix of the NHPP
+#' @references Sharkey, P. and J.A. Tawn (2017). A Poisson process reparameterisation for Bayesian inference for extremes, \emph{Extremes}, \bold{20}(2), 239-263, \code{http://dx.doi.org/10.1007/s10687-016-0280-2}.
 #' @keywords internal
+#' @examples
+#' \dontrun{
+#' dat <- evd::rgpd(n <- 1e3, 0.1, 2, -0.1)
+#' mle <- fit.pp(dat, threshold = 0, np =  np)$par
+#' info_obs <- pp.infomat(par = mle, dat = dat, method = "obs", u = 0, np = np)
+#' info_exp <- pp.infomat(par = mle, dat = dat, method = "exp", u = 0, np = np)
+#' info_obs/info_exp
+#' }
 pp.infomat <- function(par, dat, method = c("obs", "exp"), u, np = 1, nobs = length(dat)) {
   method <- match.arg(method)
   if(method == "obs"){
-  dat <- as.vector(dat)
-  if(sum(dat >u) != length(dat)){
-   warning("`dat` contains non-exceedances")
-    dat <- dat[dat >u]
+    dat <- as.vector(dat)
+    if(sum(dat >u) != length(dat)){
+     warning("`dat` contains non-exceedances")
+      dat <- dat[dat >u]
+    }
   }
-  }
+  stopifnot(length(par)==3L)
   mu <- par[1]
   sigma <- par[2]
-  xi <- par[3]
+  xi <- as.vector(par[3])
   r1 <- nobs;
   m <- np
 
@@ -2476,6 +2521,7 @@ pp.infomat <- function(par, dat, method = c("obs", "exp"), u, np = 1, nobs = len
        d22 <- (vm*xi + 1)^(-1/xi - 2)*m*vm^2*xi*(1/xi + 1)/sigma^2 - sum(xi^2*zm^2*(1/xi + 1)/((xi*zm + 1)^2*sigma^2)) - 2*(vm*xi + 1)^(-1/xi - 1)*m*vm/sigma^2 + 2*xi*sum(zm*(1/xi + 1)/((xi*zm + 1)*sigma^2)) - r1/sigma^2
        d23 <- -(vm*xi + 1)^(-1/xi - 1)*m*vm*(vm/((vm*xi + 1)*xi) - log(vm*xi + 1)/xi^2)/sigma + sum(xi*zm^2*(1/xi + 1)/((xi*zm + 1)^2*sigma)) - (vm*xi + 1)^(-1/xi)*m*vm^2/((vm*xi + 1)^2*sigma) - sum(zm*(1/xi + 1)/((xi*zm + 1)*sigma)) + sum(zm/((xi*zm + 1)*sigma*xi))
        d33 <- (vm*xi + 1)^(-1/xi)*m*(vm/((vm*xi + 1)*xi) - log(vm*xi + 1)/xi^2)^2 + (vm*xi + 1)^(-1/xi)*m*(vm^2/((vm*xi + 1)^2*xi) + 2*vm/((vm*xi + 1)*xi^2) - 2*log(vm*xi + 1)/xi^3) - sum(zm^2*(1/xi + 1)/(xi*zm + 1)^2) - 2*sum(zm/((xi*zm + 1)*xi^2)) + 2*sum(log(xi*zm + 1))/xi^3
+       infomat <- matrix(c(d11,d12,d13,d12,d22,d23,d13,d23,d33), nrow = 3, ncol = 3, byrow = TRUE)
      } else{ #Observed information, xi = 0
        d11 <- m*exp(-vm)/sigma^2
        d12 <- m*vm*exp(-vm)/sigma^2 - m*exp(-vm)/sigma^2 + r1/sigma^2
@@ -2483,14 +2529,14 @@ pp.infomat <- function(par, dat, method = c("obs", "exp"), u, np = 1, nobs = len
        d13 <- 0.5*(m*vm^2 + 2*sum(zm)*exp(vm) - 2*m*vm - 2*r1*exp(vm))*exp(-vm)/sigma
        d23 <- 0.5*(m*vm^3 + 2*sum(zm^2)*exp(vm) - 2*m*vm^2 - 2*sum(zm)*exp(vm))*exp(-vm)/sigma
        d33 <- ((1/12)*(m*vm^3*(-8 + 3*vm) + 4*exp(vm)*sum(zm^2*(-3 + 2*zm))))/exp(vm)
+       infomat <- matrix(c(d11,d12,d13,d12,d22,d23,d13,d23,d33), nrow = 3, ncol = 3, byrow = TRUE)
      }
-     return(matrix(c(d11,d12,d13,d12,d22,d23,d13,d23,d33), nrow = 3, ncol = 3, byrow = TRUE))
+
 } else{
   r2 <- r1 <- 1
   if(!xizero){
-    e11 <- (vm*xi + 1)^(-1/xi)*m*r2*(xi + 1)*xi/((sigma*vm*xi + sigma)^2*(2*xi + 1)) - (vm*xi + 1)^(-1/xi - 2)*m*xi*(1/xi + 1)/sigma^2
-    e12 <- -(vm*xi + 1)^(-1/xi - 2)*m*vm*xi*(1/xi + 1)/sigma^2 - (vm*xi + 1)^(-1/xi)*m*r2*(xi + 1)/((sigma*vm*xi + sigma)^2*(2*xi + 1)) +
-          (vm*xi + 1)^(-1/xi - 1)*m/sigma^2
+    e12 <- -m/sigma^2*(1+xi*vm)^(-1/xi-2)*(vm-xi/(1+2*xi))
+    e11 <- -m*(1+xi)/(sigma^2)*(1+xi*vm)^(-1/xi-2)*(1-xi/(1+2*xi))
     e13 <- (vm*xi + 1)^(-1/xi - 1)*m*(vm*(1/xi + 1)/(vm*xi + 1) - log(vm*xi + 1)/xi^2)/sigma -
       (2*vm*xi + vm - xi)*(vm*xi + 1)^(-1/xi)*m*r2/((vm*xi + 1)^2*(2*xi^2 + 3*xi + 1)*sigma)
     e22 <- -(vm*xi + 1)^(-1/xi - 2)*m*vm^2*xi*(1/xi + 1)/sigma^2 + 2*(vm*xi + 1)^(-1/xi - 1)*m*vm/sigma^2 +
@@ -2502,6 +2548,7 @@ pp.infomat <- function(par, dat, method = c("obs", "exp"), u, np = 1, nobs = len
       (2*(vm*xi + 1)^2*(2*xi + 1)*(xi + 1)*log(vm*xi + 1) +
          (vm^2*(2*xi + 1)*(xi + 1)*(xi - 3)*xi + 2*((2*xi^2 - xi - 3)*xi - 1)*vm + 2*xi^2)*xi)*
       (vm*xi + 1)^(-1/xi)*m*r2/((vm*xi + 1)^2*(2*xi + 1)*(xi + 1)*xi^3)
+    infomat <- - nobs * matrix(c(e11,e12,e13,e12,e22,e23,e13,e23,e33), nrow = 3, ncol = 3, byrow = TRUE)
   } else{
     e11 <- -m*exp(-vm)/sigma^2
     e12 <- -m*r2*exp(-vm)/sigma^2 - m*vm*exp(-vm)/sigma^2 + m*exp(-vm)/sigma^2
@@ -2510,7 +2557,8 @@ pp.infomat <- function(par, dat, method = c("obs", "exp"), u, np = 1, nobs = len
     e23 <- -1/2*(2*r2*vm^2 + vm^3 + 2*r2*vm - 2*vm^2 + 2*r2)*m*exp(-vm)/sigma
     e33 <- -1/12*(8*r2*vm^3 + 3*vm^4 + 12*r2*vm^2 - 8*vm^3 + 24*r2*vm + 24*r2)*m*exp(-vm)
 }
-  return(-matrix(c(e11,e12,e13,e12,e22,e23,e13,e23,e33), nrow = 3, ncol = 3, byrow = TRUE))
-}
-
+  infomat <- - matrix(c(e11,e12,e13,e12,e22,e23,e13,e23,e33), nrow = 3, ncol = 3, byrow = TRUE)
+  }
+  colnames(infomat) <- rownames(infomat) <- c("loc","scale","shape")
+  return(infomat)
 }
