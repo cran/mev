@@ -1,6 +1,6 @@
-e7e88031c1c1806af839b781b7c673d0 *DESCRIPTION
+c5e2dc364005d9b7b384b7466e9bd375 *DESCRIPTION
 7d8238b360f29bc88bc827edd79934d9 *NAMESPACE
-d10f8d0c90495f7edfed582fd8e9acf1 *NEWS
+2499d081cad31e717bc353e7dfc3d0b8 *NEWS
 c17fd9f214613f32d40cbabfa1e4e801 *R/NCdiag.R
 488ba5e10f7108d0f972fbbc32f2c124 *R/RcppExports.R
 280e1e7acc38831ca3431001a8806156 *R/Wdiag.R
@@ -8,7 +8,7 @@ c32465a5fd28054f428b5e00f9219449 *R/bias.R
 2c5ae2385b77e15f1d568bee24b09370 *R/bivpot.R
 1dbdb0ffd048518decd63fa360767fcf *R/datasets.R
 82e3068d7ae8b5b052a5f007ff02840e *R/egp.R
-e516b5e9523216d6d238cb291d2ec861 *R/extcoef.R
+e18d91535a1f2916d0b3d45c1445d99f *R/extcoef.R
 98e3107aac426ac48091e94dc3991dbf *R/extremogram.R
 f6856cc589a41e72ac70d8729a4c1cdc *R/gp.R
 8eb75e56e53bb97ebe52eacedfb26375 *R/infomattest.R
@@ -18,7 +18,7 @@ a5f4f8fabdb6f1e9266d4f9a8d5bc8ef *R/mle.R
 21409c3aecc199523362d2db7cced4c6 *R/multivar.R
 c3a9fb9529dc4671982712f4151fc5e0 *R/packageImports.R
 e93f007e831af8f2aff9cbb56375e5c7 *R/penultimate.R
-3ac58e4d8db5f65b517b633a86275a66 *R/profile.R
+2a4c8d584f9798db39aa7515730da003 *R/profile.R
 87f35189f2ec1fdf9e200747957843fd *R/rgparp.R
 6273841b109c6ec94e34f22572d197ab *R/rmev.R
 fa521e72d8df384855a86285415d6f3b *R/rparpcs.R
@@ -35,7 +35,7 @@ d2f73e75b93da82420774851d514ef96 *data/nidd.rda
 871a6eb828b983e885241663387e88f4 *data/venice.rda
 b873a86ce8d42cc8fc9d9a87891c1762 *data/w1500m.rda
 3cea83f399678017767fecf8f0518123 *inst/doc/mev-vignette.Rnw
-8351e06072f12ff62c8ffe54863fd32f *inst/doc/mev-vignette.pdf
+3ed303d6f7f64e39b8668d8c70797b42 *inst/doc/mev-vignette.pdf
 056c1b68dfb31077d2c3d77f71f947dd *inst/include/mev.h
 124716aae10970832685fc78f4242036 *inst/include/mev_RcppExports.h
 3c8ec9aada3185d4b89ae4b9942c414c *man/Lambda2cov.Rd
@@ -92,7 +92,7 @@ d0882557616839aadc152d19bc28de24 *man/emplik.Rd
 5cb4129d5f8c2d1bd3a14925a5dfd0ee *man/eskrain.Rd
 1fb635507a05efd9cbf402c661606b69 *man/expme.Rd
 fd3af088b230e728ddf6e2c3d47a10ee *man/ext.index.Rd
-84fd8bc928a9eec28e55df77bb55ab41 *man/extcoef.Rd
+26b7d363479ca8c7a895102826f05c54 *man/extcoef.Rd
 092f25370023863e57f178a66691d8c5 *man/extgp-functions.Rd
 e403415020af45253cb570b133ba3bde *man/extgp.G.Rd
 0aaf30b7ea6d7b74091de313e0f0d574 *man/extgp.Rd
@@ -139,7 +139,7 @@ dc21cd2ad2add4fe5bb4b3d5228858b2 *man/gpd.ll.Rd
 6589751c4128da2b038db344dcd6ba3e *man/gpd.mle.Rd
 f39bf07c344a5a71df6d6fed30fb94b6 *man/gpd.pll.Rd
 675edeb21e8f20c17c9af48f2f7c4a23 *man/gpd.score.Rd
-85c8694b08fe11f7322e4fa26e7daa0e *man/gpd.tem.Rd
+c1d833a3a5424898053c4928aa9c1214 *man/gpd.tem.Rd
 d57f016bbb968f8838d79d4b87af5397 *man/gpd.temstat.Rd
 4d2ab430427ab7aa0fd4cf25fbf66236 *man/gpdN.Rd
 cafa4b52227cbe3bc9f6b7380394a5fc *man/gpdN.infomat.Rd
@@ -203,8 +203,8 @@ a1e86627020c43852446a8e2c2141b3f *src/Makevars
 a1e86627020c43852446a8e2c2141b3f *src/Makevars.win
 a41f0f24f0d91339b02831512726983d *src/RcppExports.cpp
 6a39b7b6ef6474f285cf65da73960a6a *src/auxiliary_fun.cpp
-b57b575d1b505311627d1de291611393 *src/emplik.cpp
+1cc095b39559d225197ab3aa1d20babf *src/emplik.cpp
 3814b8243b155172e9a12254178edb9e *src/gpdbayes.cpp
-09ec87cf3e90841712c2a0ad4c999027 *src/sampling.cpp
+f54b8946c7cab86a3c477092bb52a554 *src/sampling.cpp
 3cea83f399678017767fecf8f0518123 *vignettes/mev-vignette.Rnw
 f2bdcc9f650effaefd476e53abd1da95 *vignettes/mev_vignette.bib
