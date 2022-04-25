@@ -5,17 +5,18 @@
 \title{Score and likelihood ratio tests fit of equality of shape over multiple thresholds}
 \usage{
 NC.diag(
-  x,
+  xdat,
   u,
   GP.fit = c("Grimshaw", "nlm", "optim", "ismev"),
   do.LRT = FALSE,
   size = NULL,
-  my.xlab = NULL,
+  plot = TRUE,
+  ...,
   xi.tol = 0.001
 )
 }
 \arguments{
-\item{x}{raw data}
+\item{xdat}{numeric vector of raw data}
 
 \item{u}{\code{m}-vector of thresholds (sorted from smallest to largest)}
 
@@ -25,7 +26,9 @@ NC.diag(
 
 \item{size}{level at which a horizontal line is drawn on multiple threshold plot}
 
-\item{my.xlab}{(optional) x-axis label}
+\item{plot}{logical; if \code{TRUE}, return a plot of p-values against threshold.}
+
+\item{...}{additional parameters passed to \code{plot}}
 
 \item{xi.tol}{numerical tolerance for threshold distance; if the absolute value of \code{xi1.hat} is less than \code{xi.tol} use linear interpolation
 to evaluate score vectors, expected Fisher information matrices, Hessians}
@@ -44,13 +47,12 @@ maximization. Other options are one-dimensional maximization of the profile the 
 Two-dimensional optimisation using 2D-optimization \code{\link[ismev]{ismev}} using the routine
 from \code{gpd.fit} from the \code{ismev} library, with the addition of the algebraic gradient.
 The choice of \code{GP.fit} should make no difference but the options were kept.
-\bold{Warning}: the function is not robust
-and will not recover from failure of the maximization routine, returning various error messages.
+\bold{Warning}: the function will not recover from failure of the maximization routine, returning various error messages.
 }
 \examples{
 \dontrun{
 data(nidd)
-u <- quantile(nidd, seq(0.85, 0.99, by = 0.01))
+u <- seq(65,90, by = 1L)
 NC.diag(nidd, u, size = 0.05)
 }
 }

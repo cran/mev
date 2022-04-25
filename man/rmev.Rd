@@ -11,12 +11,14 @@ rmev(
   asy,
   sigma,
   model = c("log", "alog", "neglog", "aneglog", "bilog", "negbilog", "hr", "br",
-    "xstud", "smith", "schlather", "ct", "sdir", "dirmix"),
+    "xstud", "smith", "schlather", "ct", "sdir", "dirmix", "pairbeta", "pairexp",
+    "wdirbs", "wexpbs"),
   alg = c("ef", "sm"),
-  weights,
-  vario,
+  weights = NULL,
+  vario = NULL,
   coord = NULL,
   grid = FALSE,
+  dist = NULL,
   ...
 )
 }
@@ -45,6 +47,8 @@ the Brown-Resnick, Smith, Schlather and extremal Student max-stable processes.}
 
 \item{grid}{Logical. \code{TRUE} if the coordinates are two-dimensional grid points (spatial models).}
 
+\item{dist}{symmetric matrix of pairwise distances. Default to \code{NULL}.}
+
 \item{...}{additional arguments for the \code{vario} function}
 }
 \value{
@@ -52,8 +56,7 @@ an \code{n} by \code{d} exact sample from the corresponding multivariate extreme
 }
 \description{
 Implementation of the random number generators for multivariate extreme-value distributions
-and max-stable processes based on the two algorithms described in
-Dombry, Engelke and Oesting (2016).
+and max-stable processes based on the two algorithms described in Dombry, Engelke and Oesting (2016).
 }
 \details{
 The vector param differs depending on the model
@@ -68,6 +71,8 @@ The vector param differs depending on the model
  vector consisting of the \code{d} Dirichlet parameters and the last entry is an index of regular variation in \eqn{(-\min(\alpha_1, \ldots, \alpha_d), 1]} treated as shape parameter
  \item \code{xstud}: one dimensional parameter corresponding to degrees of freedom \code{alpha}
  \item \code{dirmix}: \code{d} by \code{m}-dimensional matrix of positive (a)symmetry parameters
+ \item \code{pairbeta, pairexp}: \code{d(d-1)/2+1} vector of parameters, containing the concentration parameter and the coefficients of the pairwise beta, in lexicographical order e.g., \eqn{\beta_{12}, \beta_{13}, \ldots}
+ \item \code{wdirbs, wexpbs}: \code{2d} vector of \code{d} concentration parameters followed by the \code{d} Dirichlet parameters
 }
 
 Stephenson points out that the multivariate asymmetric negative logistic model given in e.g. Coles and Tawn (1991) is not a valid distribution function in dimension \eqn{d>3} unless additional constraints are imposed on the parameter values.
@@ -94,23 +99,25 @@ rmev(n=100, d=4, param=c(0.2,0.1,0.9,0.5), model='bilog', alg='sm')
 semivario <- function(x, scale, alpha){ scale*x^alpha }
 #grid specification
 grid.coord <- as.matrix(expand.grid(runif(4), runif(4)))
-rmev(n=100, vario=semivario,coord=grid.coord, model='br', scale = 0.5, alpha = 1)
+rmev(n=100, vario=semivario, coord=grid.coord, model='br', scale = 0.5, alpha = 1)
+#using the Brown-Resnick model with a covariance matrix
 vario2cov <- function(coord, semivario,...){
  sapply(1:nrow(coord), function(i) sapply(1:nrow(coord), function(j)
   semivario(sqrt(sum((coord[i,])^2)), ...) +
   semivario(sqrt(sum((coord[j,])^2)), ...) -
   semivario(sqrt(sum((coord[i,]-coord[j,])^2)), ...)))
 }
+rmev(n=100, sigma=vario2cov(grid.coord, semivario = semivario, scale = 0.5, alpha = 1), model='br')
 # asymmetric logistic model - see evd::rmvevd
 asy <- list(0, 0, 0, 0, c(0,0), c(0,0), c(0,0), c(0,0), c(0,0), c(0,0),
   c(.2,.1,.2), c(.1,.1,.2), c(.3,.4,.1), c(.2,.2,.2), c(.4,.6,.2,.5))
 rmev(n=1, d=4, param=0.3, asy=asy, model="alog")
-rmev(n=100, sigma=vario2cov(grid.coord, semivario = semivario, scale = 0.5, alpha = 1), model='br')
 #Example with a grid (generating an array)
 rmev(n=10, sigma=cbind(c(2,1), c(1,3)), coord=cbind(runif(4), runif(4)), model='smith', grid=TRUE)
 ## Example with Dirichlet mixture
 alpha.mat <- cbind(c(2,1,1),c(1,2,1),c(1,1,2))
 rmev(n=100, param=alpha.mat, weights=rep(1/3,3), model='dirmix')
+rmev(n=10, param=c(0.1,1,2,3), d=3, model='pairbeta')
 }
 \references{
 Dombry, Engelke and Oesting (2016). Exact simulation of max-stable processes, \emph{Biometrika}, \bold{103}(2), 303--317.

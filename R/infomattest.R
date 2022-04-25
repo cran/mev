@@ -21,10 +21,12 @@
 #'@references Fukutome, Liniger and Suveges (2015), Automatic threshold and run parameter selection: a climatology for extreme hourly precipitation in Switzerland. \emph{Theoretical and Applied Climatology}, \strong{120}(3), 403-416.
 #' @references Suveges and Davison (2010), Model misspecification in peaks over threshold analysis. \emph{Annals of Applied Statistics}, \strong{4}(1), 203-221.
 #' @references White (1982), Maximum Likelihood Estimation of Misspecified Models. \emph{Econometrica}, \strong{50}(1), 1-25.
-#' @param x data vector
-#' @param q vector of thresholds
+#' @param xdat data vector
+#' @param thresh threshold vector
+#' @param q vector of probability levels to define threshold if \code{thresh} is missing.
 #' @param K int specifying the largest K-gap
 #' @param plot logical: should the graphical diagnostic be plotted?
+#' @param ... additional arguments, currently ignored
 #'
 #' @return an invisible list of matrices containing
 #' \itemize{
@@ -34,19 +36,33 @@
 #' \item \code{loglik} a matrix of log-likelihood values at MLE for each given pair (\code{u}, \code{K})
 #' \item \code{threshold} a vector of thresholds based on empirical quantiles at supplied levels.
 #' \item \code{q} the vector \code{q} supplied by the user
+#' \item \code{K} the largest gap number, supplied by the user
 #' }
 #' @examples
-#' infomat.test(x <- evd::rgpd(n = 10000), q = seq(0.1, 0.9, length = 10), K <- 3)
+#' infomat.test(xdat = evd::rgpd(n = 10000),
+#'              q = seq(0.1, 0.9, length = 10),
+#'              K = 3)
 #' @export
-infomat.test <- function(x, q, K, plot = TRUE) {
+infomat.test <- function(xdat, thresh, q, K, plot = TRUE, ...) {
+  args <- list(...)
+  if(missing(xdat) & !is.null(args$x)){
+    xdat <- args$x
+  }
     K <- as.integer(K)
     if (K < 1) {
         stop("Invalid K-gap specification")
     }
-    if (isTRUE(all(q > 0, q < 1))) {
-        threshold <- quantile(x, q)
-    } else {
-        stop("Invalid vector of probabilities specified")
+    if(missing(thresh) & missing(q)){
+      stop("Provide vector of thresholds or probability levels")
+    }
+    if(missing(thresh) & !missing(q)){
+      if (isTRUE(all(q > 0, q < 1))) {
+          thresh <- quantile(xdat, q)
+      } else {
+          stop("Invalid vector of probabilities specified")
+      }
+    } else if(!missing(thresh) & missing(q)){
+      q <- NULL #ecdf(xdat)[thresh]
     }
     # Define functions
 
@@ -78,29 +94,32 @@ infomat.test <- function(x, q, K, plot = TRUE) {
     }
     Vn <- function(par, Ck, N0) {
         mean((2 * I(Ck != 0)/par^2 + Ck^2 - 4 * Ck/par - Dpn(par, Ck, N0)/In(par, Ck, N0) * ll.gap.score.i(par, Ck))^2)
-        # Typo in Suveges and Davison (2010) and Suveges(2015) - should be squared Otherwise the second part of the expression vanishes
+        # Typo in Suveges and Davison (2010) and Suveges(2015) - should be squared
+        # Otherwise the second part of the expression vanishes
         # since it equals cst * score equation
     }
     Tn <- function(par, Ck, N0) {
         length(Ck) * (Jn(par, Ck, N0) - In(par, Ck, N0))^2/Vn(par, Ck, N0)
     }
 
-    # Interexceedance time Define containers
-    IMT <- llval <- mles <- matrix(0, ncol = K, nrow = length(q))
+    # Interexceedance time
+    # Define containers
+    IMT <- llval <- mles <-
+      matrix(0, ncol = K, nrow = length(thresh))
     # Exceedance values
-    if (length(threshold) > 1) {
-        exceeds <- lapply(sapply(threshold, function(thresh) {
-            which(x > thresh)
+    if (length(thresh) > 1) {
+        exceeds <- lapply(sapply(thresh, function(th) {
+            which(xdat > th)
         }), diff)
-    } else if (length(threshold) == 1) {
-        exceeds <- list(diff(which(x > threshold)))
+    } else if (length(thresh) == 1) {
+        exceeds <- list(diff(which(xdat > thresh)))
     } else {
         stop("Invalid threshold")
     }
-    for (k in 1:K) {
-        for (ind in 1:length(q)) {
+    for (k in seq_len(K)) {
+        for (ind in seq_along(thresh)) {
             # Interexceedance times, scaled by frequency
-            Ck <- ((length(exceeds[[ind]]) + 1)/length(x)) * pmax(exceeds[[ind]] - k, 0)
+            Ck <- ((length(exceeds[[ind]]) + 1)/length(xdat)) * pmax(exceeds[[ind]] - k, 0)
             N0 <- sum(Ck == 0)  #Interclusters
             schi <- sum(Ck)
 
@@ -115,19 +134,112 @@ infomat.test <- function(x, q, K, plot = TRUE) {
         }
         pvals <- 1 - pchisq(IMT, df = 1)
     }
+  ret_list <- list(IMT = IMT,
+                  pvals = pvals,
+                  loglik = llval,
+                  mle = mles,
+                  threshold = thresh,
+                  q = q,
+                  K = K)
+  class(ret_list) <- "mev_thdiag_infomat"
+  if(isTRUE(plot)){
+    plot(ret_list)
+  }
+  invisible(ret_list)
+}
 
-    if (plot) {
-        cols <- colorRampPalette(colors = c("red", "white", "blue"), bias = 4.5, space = "rgb")(100)
-        image(x = q, y = seq(0.5, K + 0.5, by = 1), z = ceiling(100 * pvals), breaks = 1:101, col = cols, ylab = "K", main = "Information Matrix Test",
-            xlab = "quantile", lab = c(length(q), K, 3))
-        allpos <- expand.grid(1:length(q), 1:K)
-        text(x = q[allpos[, 1]], y = allpos[, 2], labels = round(IMT, 2), col = c(rep("black", 50), rep("white", 50))[ceiling(100 *
-            pvals)])  #
-        text(x = q[allpos[, 1]], y = allpos[, 2], labels = paste0("(", round(pvals, 2), ")"), cex = 0.75, pos = 1, col = c(rep("black",
-            50), rep("white", 50))[ceiling(100 * pvals)])  #
-        mtext(side = 3, line = 0, text = "Test statistic (p-value)", adj = 1)
-    }
-    invisible(list(IMT = IMT, pvals = pvals, loglik = llval, mle = mles, threshold = threshold, q = q))
+#' @export
+print.mev_thdiag_infomat <-
+  function(x,
+           ...){
+  pvals <- as.data.frame(formatC(x$pvals,
+                                 digits = 2,
+                                 width = 3,
+                                 format = "f"))
+  pvals[x$pvals < 0.01] <- "<0.01"
+  colnames(pvals) <- paste0("K=",seq_len(x$K))
+  rownames(pvals) <- format(as.numeric(x$threshold),
+                            trim = TRUE,
+                            digits = 3,
+                            nsmall=0)
+  cat("Suveges and Davison information matrix test\n")
+  cat("p-values for thresholds (row) and gap size (col)\n\n")
+  print(pvals)
+  }
+
+#' @export
+plot.mev_thdiag_infomat <- function(x,
+                                    type = c("matplot",
+                                             "heatmap"),
+                                    xlab = c("threshold",
+                                             "quantile"),
+                                    ...){
+  type <- match.arg(type)
+  xlab <- match.arg(xlab)
+  if(is.null(x$q)){
+    xlab <- "threshold"
+  }
+  xp <- switch(xlab,
+               "threshold" = x$threshold,
+               "quantile" = x$q)
+  if(type == "heatmap"){
+    cols <-
+      colorRampPalette(
+        colors = c("red", "white", "blue"),
+        bias = 4.5,
+        space = "rgb"
+      )(100)
+    image(
+      x = 1:length(xp),
+      y = seq(0.5, x$K + 0.5, by = 1),
+      z = ceiling(100 * x$pvals),
+      breaks = 1:101,
+      col = cols,
+      ylab = "K",
+      main = "Information matrix test",
+      xlab = xlab,
+      lab = c(length(x$threshold), x$K, 3),
+      xaxt = 'n'
+    )
+    axis(side = 1,
+         at = 1:length(xp),
+         labels = format(xp,
+                         trim = TRUE,
+                         digits = 3, nsmall=0))
+    allpos <- expand.grid(1:length(x$threshold), 1:x$K)
+    text(
+      x = allpos[, 1],
+      y = allpos[, 2],
+      labels = round(x$IMT, 2),
+      col = c(rep("black", 50),
+              rep("white", 50))[ceiling(100 *
+                                                            x$pvals)]
+    )  #
+    text(
+      x = allpos[, 1],
+      y = allpos[, 2],
+      labels = paste0("(", round(x$pvals, 2), ")"),
+      cex = 0.75,
+      pos = 1,
+      col = c(rep("black",
+                  50), rep("white", 50))[ceiling(100 * x$pvals)]
+    )  #
+    mtext(
+      side = 3,
+      line = 0,
+      text = "Test statistic (p-value)",
+      adj = 1
+    )
+  } else if(type == "matplot"){
+    matplot(x = xp,
+            y = x$pvals,
+            type = "b",
+            xlab = xlab,
+            ylab = "p-value",
+            yaxs = "i",
+            ylim = c(0,1),
+            bty = "l")
+  }
 }
 
 
@@ -166,7 +278,7 @@ infomat.test <- function(x, q, K, plot = TRUE) {
 #' \strong{120}(3), 403-416.
 #'
 #'
-#' @param x a vector containing of data points
+#' @param xdat numeric vector of observations
 #' @param q a vector of quantile levels in (0,1). Defaults to 0.95
 #' @param method a string specifying the chosen method. Must be either \code{wls}
 #' for weighted least squares, \code{mle} for maximum likelihood estimation or \code{intervals}
@@ -181,16 +293,16 @@ infomat.test <- function(x, q, K, plot = TRUE) {
 #' sim <- evd::rgev(10001, loc=1/(1+a),scale=1/(1+a),shape=1)
 #' x <- pmax(sim[-length(sim)]*a,sim[-1])
 #' q <- seq(0.9,0.99,by=0.01)
-#' ext.index(x=x,q=q,method=c('wls','mle'))
+#' ext.index(xdat=x,q=q,method=c('wls','mle'))
 #' @export
-ext.index <- function(x, q = 0.95, method = c("wls", "mle", "intervals"), plot = FALSE, warn = FALSE) {
+ext.index <- function(xdat, q = 0.95, method = c("wls", "mle", "intervals"), plot = FALSE, warn = FALSE) {
     method <- match.arg(method, c("wls", "mle", "intervals"), several.ok = TRUE)
     stopifnot(all(q < 1), all(q > 0))
     q <- sort(q)
-    x <- as.vector(x)
-    threshold <- quantile(x, q)
+    xdat <- as.vector(xdat)
+    threshold <- quantile(xdat, q)
     # Main function, to be called recursively
-    extmethods <- function(x = x, threshold = threshold, method = method) {
+    extmethods <- function(x = xdat, threshold = threshold, method = method) {
         # The gap of exceedances
         stopifnot(length(threshold) == 1L)
         excind <- which(x > threshold)
@@ -205,7 +317,7 @@ ext.index <- function(x, q = 0.95, method = c("wls", "mle", "intervals"), plot =
         N <- length(exceeds) + 1L
         chi <- sort(exceeds[which(exceeds > 0)])
         if(length(chi) == 0){
-          warning("Only zero gaps given; return extremal index of `0`")
+          warning("Only zero gaps given; return extremal index of zero.")
          return(0)
         }
         # Rescaled interexceedance time
@@ -262,12 +374,28 @@ ext.index <- function(x, q = 0.95, method = c("wls", "mle", "intervals"), plot =
     # Provide a vector if multiple thresholds are supplied
     theta <- sapply(method, function(metho) {
         sapply(threshold, function(thresh) {
-            extmethods(x = x, threshold = thresh, method = metho)
+            extmethods(x = xdat, threshold = thresh, method = metho)
         })
     })
     if (plot) {
-        matplot(q, theta, type = "l", xlab = "q", ylim = c(0, 1), ylab = expression(theta), main = "Extremal index", lwd = 2)
-        legend(x = "bottomright", legend = method, bty = "n", lwd = 2, lty = 1:3, col = 1:3)
+      matplot(
+        q,
+        theta,
+        type = "l",
+        xlab = "q",
+        ylim = c(0, 1),
+        ylab = expression(theta),
+        main = "Extremal index",
+        lwd = 2
+      )
+      legend(
+        x = "bottomright",
+        legend = method,
+        bty = "n",
+        lwd = 2,
+        lty = 1:3,
+        col = 1:3
+      )
     }
     return(t(theta))
 }

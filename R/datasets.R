@@ -16,10 +16,10 @@ NULL
 #' Venice Sea Levels
 #'
 #' The \code{venice} data contains the 10 largest yearly sea levels (in cm)
-#' from 1887 until 2017. Only the yearly maximum is available for 1922
+#' from 1887 until 2019. Only the yearly maximum is available for 1922
 #' and the six largest observations for 1936.
 #'
-#' @format a data frame with 131 rows and 11 columns containing the year of the measurement (first column)
+#' @format a data frame with 133 rows and 11 columns containing the year of the measurement (first column)
 #' and ordered 10-largest yearly observations, reported in decreasing order from largest (\code{r1}) to smallest (\code{r10}).
 #'
 #' @note Smith (1986) notes that the annual maxima seems to fluctuate around a constant sea level
@@ -28,8 +28,8 @@ NULL
 #'
 #' The observations from 1931 until 1981 can be found in
 #' Table 1 in Smith (1986), who reported data from Pirazzoli (1982).
-#' The values from 1983 until 2017 were extracted by Anthony Davison from the City
-#' of Venice website (accessed October 2018) and are licensed under the CC BY-NC-SA 3.0 license.
+#' The values from 1983 until 2019 were extracted by Anthony Davison from the City
+#' of Venice website (accessed in May 2020) and are licensed under the CC BY-NC-SA 3.0 license.
 #' The Venice City website indicates
 #' that later measurements were recorded by an instrument located in Punta Salute.
 #'
@@ -38,7 +38,7 @@ NULL
 #' largest annual events. \emph{Journal of Hydrology} \bold{86}, 27–43.
 #' @references Pirazzoli, P., 1982. Maree estreme a Venezia (periodo 1872-1981). \emph{Acqua Aria} \bold{10}, 1023-1039.
 #' @references  Coles, S. G. (2001) \emph{An Introduction to Statistical Modelling of Extreme Values}. London: Springer.
-#' @source City of Venice, Historical archive <http://archive.comune.venezia.it/flex/cm/pages/ServeBLOB.php/L/EN/IDPagina/3045>. Last accessed October 2018.
+#' @source City of Venice, Historical archive <https://www.comune.venezia.it/node/6214>. Last accessed November 5th, 2020.
 #' @name venice
 #' @seealso \code{\link[ismev]{venice}}
 #' @docType data
@@ -88,4 +88,27 @@ NULL
 #' @name nidd
 #' @seealso \code{\link[evir]{nidd.thresh}}
 #' @docType data
+NULL
+
+#' Magnetic storms
+#'
+#' Absolute magnitude of 373 geomagnetic storms lasting more than 48h with absolute magnitude (dst) larger than 100 in 1957-2014.
+#'
+#' @source Aki Vehtari
+#' @references World Data Center for Geomagnetism, Kyoto, M. Nose, T. Iyemori, M. Sugiura, T. Kamei (2015), \emph{Geomagnetic Dst index}, doi:10.17593/14515-74000.
+#' @docType data
+#' @note For a detailed article presenting the derivation of the Dst index, see \code{http://wdc.kugi.kyoto-u.ac.jp/dstdir/dst2/onDstindex.html}
+#' @format a vector of size 373
+#' @name geomagnetic
+NULL
+
+#' Abisko rainfall
+#'
+#' Daily non-zero rainfall measurements in Abisko (Sweden) from January 1913 until December 2014.
+#' @param date \code{Date} of the measurement
+#' @param precip rainfall amount (in mm)
+#' @format a data frame with 15132 rows and two variables
+#' @name abisko
+#' @source Abisko Scientific Research Station
+#' @references A. Kiriliouk, H. Rootzén, J. Segers and J.L. Wadsworth (2019), \emph{Peaks over thresholds modeling With multivariate generalized Pareto distributions},  Technometrics, \bold{61}(1), 123--135, \code{DOI:10.1080/00401706.2018.1462738}
 NULL

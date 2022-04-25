@@ -37,15 +37,24 @@
 #' taildep(dat, confint = 'wald')
 #' }
 #' @importFrom "utils" "combn"
-taildep <- function (data, u = NULL, nq = 40, qlim = c(0.8, 0.99), depmeas = c("eta","chi"),
-                     method = list(eta = c("emp","betacop", "gpd", "hill"), chi = c("emp","betacop")),
+taildep <- function (data, u = NULL,
+                     nq = 40,
+                     qlim = c(0.8, 0.99),
+                     depmeas = c("eta","chi"),
+                     method = list(eta = c("emp","betacop", "gpd", "hill"),
+                                   chi = c("emp","betacop","emplik")),
                      confint = c("wald","lrt"),
                      level = 0.95, trunc = TRUE, ties.method = "random", plot = TRUE, ...) {
   if(is.character(depmeas)){
     depmeas <- which(c("eta", "chi") %in% match.arg(depmeas, c("eta", "chi"), several.ok = TRUE))
   }
+  depmeas_names <- c("eta", "chi")[depmeas]
   if((! length(depmeas) %in% c(1L, 2L)) || !all(depmeas  %in% c(1L, 2L))){
-    stop("Invalid argument for `depmeas`: must be either `eta`,`chi` or both.")
+    stop("Invalid argument for \"depmeas\": must be either \"eta\",\"chi\" or both.")
+  }
+  if(! (is.list(method) && isTRUE(all(names(method) %in% depmeas_names)))){
+    stop(paste0("\"method\" should be a list with components ",
+               paste(depmeas, collapse = " and "),"."))
   }
   data <- as.matrix(data)
   data <- na.omit(data)
@@ -63,32 +72,32 @@ taildep <- function (data, u = NULL, nq = 40, qlim = c(0.8, 0.99), depmeas = c("
    methodchi <- c()
   }
   method <- c(methodeta, methodchi)
-   datarank <- apply(data, 2, rank, ties.method = ties.method)
-   rowmax <- apply(datarank/(n+1), 1, max)
-   rowmin <- apply(datarank/(n+1), 1, min)
-   eps <- .Machine$double.eps^0.5
-   qlim2 <- c(min(rowmax) + eps, max(rowmin) - eps)
-   if(is.null(u)){
-   if (!is.null(qlim)) {
-     if (qlim[1] < qlim2[1]){
-       stop("lower quantile limit is too low")
-     }
-     if (qlim[2] > qlim2[2]) {
-       stop("upper quantile limit is too high")
-     }
-     if (qlim[1] > qlim[2]) {
-       stop("lower quantile limit is less than upper quantile limit")
-     }
-   }  else{ qlim <- qlim2
-   }
+  datarank <- apply(data, 2, rank, ties.method = ties.method)
+  rowmax <- apply(datarank/(n+1), 1, max)
+  rowmin <- apply(datarank/(n+1), 1, min)
+  eps <- .Machine$double.eps^0.5
+  qlim2 <- c(min(rowmax) + eps, max(rowmin) - eps)
+  if(is.null(u)){
+    if (!is.null(qlim)) {
+      if (qlim[1] < qlim2[1]){
+        stop("lower quantile limit is too low")
+      }
+      if (qlim[2] > qlim2[2]) {
+        stop("upper quantile limit is too high")
+      }
+      if (qlim[1] > qlim[2]) {
+        stop("lower quantile limit is less than upper quantile limit")
+      }
+    }  else{ qlim <- qlim2
+    }
     u <- seq(qlim[1], qlim[2], length = nq)
-   } else{
+  } else{
     u <- sort(u)
     nq <- length(u)
     if(min(u) < qlim2[1] || max(u) >  qlim2[2]){
       warning("upper quantile limit is too high or lower quantile limit is too low")
     }
-   }
+  }
 
 
   confint <- match.arg(confint)
@@ -115,10 +124,10 @@ taildep <- function (data, u = NULL, nq = 40, qlim = c(0.8, 0.99), depmeas = c("
       fitu <- suppressWarnings(fit.gpd(ps, threshold = th))
       prof <- try(suppressWarnings(gpd.pll(param = "shape", dat = ps, threshold = th, mod = "prof", mle = fitu$estimate, plot = FALSE)))
       co <- try(suppressWarnings(confint(prof, prob = c((1-level)/2, (1+level)/2), print = FALSE)))
-      if(!is.character(co)){
-        return(co)
+      if(inherits(x = co, what = "try-error")){
+        return(c(fitu$estimate[2], rep(NA, 2)))
       } else{
-       return(c(fitu$estimate[2], rep(NA, 2)))
+        return(co)
       }
     } else{
       return(rep(NA, 3))
@@ -150,7 +159,9 @@ taildep <- function (data, u = NULL, nq = 40, qlim = c(0.8, 0.99), depmeas = c("
       if(confint == "lrt"){
         low <- try(uniroot(f = function(il){ 2*(expll(samp, il) - maxll) + qchisq(level, 1)}, interval = c(1e-8, mle)))
         upp <- try(uniroot(f = function(il){ 2*(expll(samp, il) - maxll) + qchisq(level, 1)}, interval = c(mle, 5)))
-       return(c(mle, ifelse(is.character(low), NA, low), ifelse(is.character(upp), NA, upp)))
+       return(c(mle,
+                ifelse(inherits(low, what = "try-error"), NA, low),
+                ifelse(inherits(upp, what = "try-error"), NA, upp)))
       } else if(confint == "wald"){
        return(c(mle, mle + c(-1,1)*mle/sqrt(length(samp))*qnorm((1+level)/2)))
       }
@@ -252,7 +263,7 @@ plot.mev_taildep <- function(x, ...){
     main <- rep("",2)[show]
   } else{
     if(length(ellips$main) != sum(show)){
-      stop("Invalid input: `main` must be of the same length as `which`")
+      stop("Invalid input: \"main\" must be of the same length as \"which\"")
     }
     main <- ellips$main
   }
@@ -265,7 +276,7 @@ plot.mev_taildep <- function(x, ...){
     ylab <- expression(eta, chi)
   } else{
     if(length(ellips$ylab) != sum(show)){
-      stop("Invalid input: `ylab` must be of the same length as `which`")
+      stop("Invalid input: \"ylab\" must be of the same length as \"which\"")
     }
     ylab <- rep(ellips$ylab, length.out = 2)
   }

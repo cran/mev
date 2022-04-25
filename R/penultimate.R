@@ -57,8 +57,18 @@ NULL
 #'
 #' @export
 #' @keywords internal
-egp.fit <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), init, show = FALSE){
-  fit.egp(xdat = xdat, thresh = thresh, model = model, init = init, show = show)
+egp.fit <- function(xdat,
+                    thresh,
+                    model = c("egp1", "egp2", "egp3"),
+                    init,
+                    show = FALSE) {
+  fit.egp(
+    xdat = xdat,
+    thresh = thresh,
+    model = model,
+    init = init,
+    show = show
+  )
 }
 
 #' Extended generalised Pareto families of Papastathopoulos and Tawn (functions)
@@ -70,7 +80,12 @@ egp.fit <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), init, show 
 #' @inheritParams egp
 #' @name egp-function
 #' @keywords internal
-egp.ll <- function(xdat, thresh, par, model = c("egp1", "egp2", "egp3")) {
+egp.ll <- function(xdat,
+                   thresh,
+                   par,
+                   model = c("egp1", "egp2", "egp3")
+) {
+
     if (!(model %in% c("egp1", "egp2", "egp3")) || length(model) != 1) {
         stop("Invalid model selection")
     }
@@ -100,7 +115,13 @@ egp.ll <- function(xdat, thresh, par, model = c("egp1", "egp2", "egp3")) {
 #' @export
 #' @inheritParams egp
 #' @keywords internal
-egp.retlev <- function(xdat, thresh, par, model = c("egp1", "egp2", "egp3"), p, plot = TRUE) {
+egp.retlev <- function(xdat,
+                       thresh,
+                       par,
+                       model = c("egp1", "egp2", "egp3"),
+                       p,
+                       plot = TRUE
+) {
     if (!(model %in% c("egp1", "egp2", "egp3")) || length(model) != 1) {
         stop("Invalid model selection")
     }
@@ -120,7 +141,7 @@ egp.retlev <- function(xdat, thresh, par, model = c("egp1", "egp2", "egp3"), p, 
     if (any(sapply(rate, function(zeta) {
         zeta < p
     }))) {
-        warning("Some probabilities `p` are higher than the exceedance rate. Evaluate those empirically")
+        warning("Some probabilities \"p\" are higher than the exceedance rate. Evaluate those empirically")
     }
     p <- sort(p)
     pq <- rev(1/p)
@@ -162,7 +183,9 @@ egp.retlev <- function(xdat, thresh, par, model = c("egp1", "egp2", "egp3"), p, 
 #' @param init vector of initial values, with \eqn{\log(\kappa)}{log(\kappa)} and \eqn{\log(\sigma)}{log(\sigma)}; can be omitted.
 #' @return \code{fit.egp} outputs the list returned by \link[stats]{optim}, which contains the parameter values, the hessian and in addition the standard errors
 #' @name fit.egp
-#' @description The function \code{tstab.egp} provides classical threshold stability plot for (\eqn{\kappa}, \eqn{\sigma}, \eqn{\xi}). The fitted parameter values are displayed with pointwise normal 95\% confidence intervals.
+#' @description The function \code{tstab.egp} provides classical threshold stability plot for (\eqn{\kappa}, \eqn{\sigma}, \eqn{\xi}).
+#' The fitted parameter values are displayed with pointwise normal 95\% confidence intervals.
+#' The function returns an invisible list with parameter estimates and standard errors, and p-values for the Wald test that \eqn{\kappa=1}.
 #'  The plot is for the modified scale (as in the generalised Pareto model) and as such it is possible that the modified scale be negative.
 #' \code{tstab.egp} can also be used to fit the model to multiple thresholds.
 #' @param plots vector of integers specifying which parameter stability to plot (if any); passing \code{NA} results in no plots
@@ -170,17 +193,35 @@ egp.retlev <- function(xdat, thresh, par, model = c("egp1", "egp2", "egp3"), p, 
 #' @param umin optional minimum value considered for threshold (if \code{thresh} is not provided)
 #' @param umax optional maximum value considered for threshold (if \code{thresh} is not provided)
 #' @param nint optional integer number specifying the number of thresholds to test.
+#' @param changepar logical; if \code{TRUE}, the graphical parameters (via a call to \code{par}) are modified.
 #' @return \code{tstab.egp} returns a plot(s) of the parameters fit over the range of provided thresholds, with pointwise normal confidence intervals; the function also returns an invisible list containing notably the matrix of point estimates (\code{par}) and standard errors (\code{se}).
 #' @importFrom graphics arrows points polygon title
 #' @export
 #' @examples
-#' xdat <- evd::rgpd(n = 100, loc = 0, scale = 1, shape = 0.5)
-#' fitted <- fit.egp(xdat = xdat, thresh = 1, model = "egp2", show = TRUE)
+#' xdat <- evd::rgpd(
+#'   n = 100,
+#'   loc = 0,
+#'   scale = 1,
+#'   shape = 0.5)
+#' fitted <- fit.egp(
+#'   xdat = xdat,
+#'   thresh = 1,
+#'   model = "egp2",
+#'   show = TRUE)
 #' thresh <- evd::qgpd(seq(0.1, 0.5, by = 0.05), 0, 1, 0.5)
-#' tstab.egp(xdat = xdat, thresh = thresh, model = "egp2", plots = 1:3)
-fit.egp <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), init, show = FALSE) {
+#' tstab.egp(
+#'    xdat = xdat,
+#'    thresh = thresh,
+#'    model = "egp2",
+#'    plots = 1:3)
+fit.egp <- function(xdat,
+                    thresh,
+                    model = c("egp1", "egp2", "egp3"),
+                    init,
+                    show = FALSE) {
+
     if (!(model %in% c("egp1", "egp2", "egp3")) || length(model) != 1) {
-        stop("Invalid model  argument: must be one of `egp1', `egp2' or `egp3'.")
+        stop("Invalid model  argument: must be one of \"egp1\", \"egp2\" or \"egp3\".")
     }
     if (length(thresh) > 1) {
         warning("Length of threshold vector greater than one. Selecting first component.")
@@ -195,18 +236,41 @@ fit.egp <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), init, show 
     }
     if (changinit) {
         init <- c(kappa = 1.01, suppressWarnings(fit.gpd(xdat, threshold = thresh[1], show = FALSE)$est))
+        # Change starting values for boundary cases, otherwise the optimization stalls
+        if(init[3] < -0.99){
+          init[3] <- -0.97
+        }
     }
-
+    if(!is.finite(egp.ll(par = init, xdat = xdat,
+                         thresh = thresh,
+                         model = model))){
+      stop("Invalid starting parameters.")
+    }
     # Keep exceedances only
-    xdata = xdat[xdat > thresh]
-    xmax <- max(xdata);
+    xdata <- xdat[xdat > thresh]
+    xmax <- max(xdata)
     mle <- alabama::auglag(par = init,
-                           fn = function(par, xdat, thresh, model){-egp.ll(par = par, xdat = xdat, thresh = thresh, model = model)},
-                           hin = function(par, ...){c(par[1]-1e-10, par[2]-1e-10, par[3]+1,
-                                                      ifelse(par[3] < 0, thresh-par[2]/par[3] - xmax, 1))},
-                           xdat = xdata, thresh = thresh, model = model,
-                           control.outer = list(trace = FALSE, method = "BFGS"),
-                           control.optim = list(maxit = 500, reltol = 1e-10))
+                           fn = function(par, xdat, thresh, model){
+                             -egp.ll(par = par,
+                                     xdat = xdat,
+                                     thresh = thresh,
+                                     model = model)
+                             },
+                           hin = function(par, ...){
+                             c(par[1]-1e-10,
+                               par[2]-1e-10,
+                               par[3]+1,
+                               ifelse(par[3] < 0,
+                                      thresh-par[2]/par[3] - xmax,
+                                      1))
+                             },
+                           xdat = xdata,
+                           thresh = thresh,
+                           model = model,
+                           control.outer = list(trace = FALSE,
+                                                method = "BFGS"),
+                           control.optim = list(maxit = 500,
+                                                reltol = 1e-10))
     fitted <- list()
     fitted$estimate <- fitted$param <- mle$par
     fitted$deviance <- 2*mle$value
@@ -215,7 +279,7 @@ fit.egp <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), init, show 
       fitted$convergence <- "successful"
       fitted$vcov <- try(solve(mle$hessian))
       fitted$std.err <- try(sqrt(diag(fitted$vcov)))
-      if(is.character(mle$se) || mle$par[3] < -0.5){
+      if(inherits(fitted$std.err, what = "try-error") || mle$par[3] < -0.5){
         fitted$vcov <- NULL
         fitted$se <- rep(NA, 3)
       }
@@ -272,31 +336,56 @@ print.mev_egp <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'
 #' @export
 #' @keywords internal
-egp.fitrange <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), plots = 1:3, umin, umax, nint){
-  tstab.egp(xdat = xdat, thresh = thresh, model = model, plots = plots, umin = umin, umax = umax, nint = nint)
+egp.fitrange <-
+  function(xdat,
+           thresh,
+           model = c("egp1", "egp2", "egp3"),
+           plots = 1:3,
+           umin,
+           umax,
+           nint) {
+    tstab.egp(
+      xdat = xdat,
+      thresh = thresh,
+      model = model,
+      plots = plots,
+      umin = umin,
+      umax = umax,
+      nint = nint
+    )
 }
 
 #' @inheritParams egp
+#' @param ... additional arguments for the plot function, currently ignored
 #' @rdname fit.egp
 #' @export
-tstab.egp <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), plots = 1:3, umin, umax, nint) {
+tstab.egp <- function(xdat,
+                      thresh,
+                      model = c("egp1", "egp2", "egp3"),
+                      plots = 1:3,
+                      umin,
+                      umax,
+                      nint,
+                      changepar = TRUE,
+                      ...) {
     if (!(model %in% c("egp1", "egp2", "egp3")) || length(model) != 1) {
         stop("Invalid model selection")
     }
     if (missing(thresh) && isTRUE(any(c(missing(umin), missing(umax))))) {
-        stop("Must provide either minimum and maximum threshold values, or a vector of threshold `thresh'")
+        stop("Must provide either minimum and maximum threshold values, or a vector of threshold \"thresh\".")
     } else if (missing(thresh)) {
         stopifnot(inherits(umin, c("integer", "numeric")),
                   inherits(umax, c("integer", "numeric")),
                   length(umin) == 1, length(umax) == 1, umin < umax)
         thresh <- seq(umin, umax, length = nint)
     } else if (length(thresh) <= 1) {
-        stop("Invalid `thresh' provided; please use a vector of threshold candidates of length at least 2")
+        stop("Invalid argument\"thresh\" provided;\n please use a vector of threshold candidates of length at least 2")
     }
     pe <- se <- matrix(0, ncol = 4, nrow = length(thresh))
     conv <- rep(0, length(thresh))
     fit <- suppressWarnings(fit.egp(xdat = xdat, thresh = thresh[1], model = model))
     pe[1, -4] <- fit$param
+    colnames(pe) <- colnames(se) <- c(names(fit$param), "modif scale")
     se[1, -4] <- fit$std.err
     conv[1] <- ifelse(is.character(fit$convergence), 0, fit$convergence)
     se[1, 4] <- sqrt(cbind(1, -thresh[1]) %*% solve(fit$hessian[-1, -1]) %*% rbind(1, -thresh[1]))[1]
@@ -312,35 +401,65 @@ tstab.egp <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), plots = 1
     pe[, 4] <- pe[, 2] - pe[, 3] * thresh
 
     # Graphics
-    if (!(length(plots) == 1 && is.na(plots))) {
+    plots <- plots[is.finite(plots)]
+    if (length(plots) > 0) {
         plots <- sort(unique(plots))
         if (!isTRUE(all(plots %in% 1:3))) {
             stop("Invalid plot selection. Must be a vector of integers containing indices 1, 2 or 3.")
         }
-
-        old.par <- par(no.readonly = TRUE)
-        on.exit(par(old.par))
-        par(mfrow = c(length(plots), 1), mar = c(4.5, 4.5, 3.1, 0.1))
+        if(changepar){
+          old.par <- par(no.readonly = TRUE)
+          on.exit(par(old.par))
+          par(mfrow = c(length(plots), 1),
+              mar = c(4.5, 4.5, 3.1, 0.1))
+        }
         for (i in plots) {
             if (i == 2) {  i <- 4  }  #Get modified scale
             # Plotting devices limits
-            ylims = c(min(pe[, i]) - qnorm(0.975) * max(se[, i]), max(pe[, i]) + qnorm(0.975) * max(se[, i]))
-            plot(x = thresh, y = pe[, i], pch = 20, xlab = "Threshold", bty = "l", ylab = switch(i, expression(kappa), expression(sigma),
-                expression(xi), expression(tilde(sigma))), ylim = ylims, type = "n")  #,cex.lab=1.25)
-            polygon(c(thresh, rev(thresh)), c(pe[, i] - qnorm(0.975) * se[, i], rev(pe[, i] + qnorm(0.975) * se[, i])), col = "gray95",
-                border = FALSE)
+            ylims = c(min(pe[, i]) - qnorm(0.975) * max(se[, i]),
+                      max(pe[, i]) + qnorm(0.975) * max(se[, i]))
+            plot(x = thresh,
+                 y = pe[, i],
+                 pch = 20,
+                 xlab = "threshold",
+                 bty = "l",
+                 ylab = switch(i,
+                               expression(kappa),
+                               expression(sigma),
+                               expression(xi),
+                               expression(tilde(sigma))),
+                 ylim = ylims,
+                 type = "n")
+            polygon(x = c(thresh, rev(thresh)),
+                    y = c(pe[, i] - qnorm(0.975) * se[, i],
+                      rev(pe[, i] + qnorm(0.975) * se[, i])),
+                    col = "gray95",
+                    border = FALSE)
             if (i == min(plots)) {
                 title(paste0("Parameter stability plots for EGP", substr(model, 4, 4), ""), outer = FALSE)
             }
             if (i == 1) {
                 abline(h = 1, lwd = 0.5, col = "gray20", lty = 2)
             }
-            arrows(x0 = thresh, y0 = pe[, i] - qnorm(0.975) * se[, i], y1 = pe[, i] + qnorm(0.975) * se[, i], length = 0.05, angle = 90,
-                code = 3)
-            points(x = thresh, y = pe[, i], type = "b", pch = 20)
+            arrows(x0 = thresh,
+                   y0 = pe[, i] - qnorm(0.975) * se[, i],
+                   y1 = pe[, i] + qnorm(0.975) * se[, i],
+                   length = 0.05,
+                   angle = 90,
+                   code = 3)
+            points(x = thresh,
+                   y = pe[, i],
+                   type = "b",
+                   pch = 20)
         }
-      }
-    return(invisible(list(par = pe[, -4], se = se[, -4], model = model, conv = conv, thresh = thresh)))
+    }
+    pval <- 2*pnorm(abs(pe[,1]-1)/se[,1], lower.tail = FALSE)
+    return(invisible(list(par = pe[, -4],
+                          se = se[, -4],
+                          model = model,
+                          pval = pval,
+                          conv = conv,
+                          thresh = thresh)))
 }
 
 
@@ -349,14 +468,17 @@ tstab.egp <- function(xdat, thresh, model = c("egp1", "egp2", "egp3"), plots = 1
 #' Smith's penultimate approximations
 #'
 #' The function takes as arguments the distribution and density functions. There are two options:
-#' \code{method='bm'} yields block maxima and the user should provide in such case the block sizes via the
-#' argument \code{m}. If instead \code{method='pot'} is provided, a vector of threshold values must be
+#' \code{method='bm'} yields block maxima and \code{method='pot'} threshold exceedances.
+#' For \code{method='bm'}, the user should provide in such case the block sizes via the
+#' argument \code{m}, whereas if \code{method='pot'}, a vector of threshold values should be
 #' provided. The other argument (\code{u} or \code{m} depending on the method) is ignored.
 #'
 #' Alternatively, the user can provide functions \code{densF}, \code{quantF} and \code{distF} for the density,
 #' quantile function and distribution functions, respectively. The user can also supply the derivative
 #' of the density function, \code{ddensF}. If the latter is missing, it will be approximated using finite-differences.
 #'
+#'
+#' @details For \code{method = "pot"}, the function computes the reciprocal hazard and its derivative on the log scale to avoid numerical overflow. Thus, the density function should have argument \code{log} and the distribution function arguments \code{log.p} and \code{lower.tail}, respectively.
 #' @param family the name of the parametric family. Will be used to obtain \code{dfamily}, \code{pfamily}, \code{qfamily}
 #' @param method either block maxima (\code{'bm'}) or peaks-over-threshold (\code{'pot'}) are supported
 #' @param u vector of thresholds for method \code{'pot'}
@@ -417,7 +539,7 @@ smith.penult <- function(family, method = c("bm", "pot"), u, qu, m, returnList =
     } else{ #compatibility - copy from previous
       if(any(c(is.null(ellips$densF),
                is.null(ellips$distF)))){
-        stop("Argument `family` missing.")
+        stop("Argument \"family\" missing.")
       } else{
        densF <- ellips$densF
        distF <- ellips$distF
@@ -431,6 +553,7 @@ smith.penult <- function(family, method = c("bm", "pot"), u, qu, m, returnList =
     }
     # Matching extra arguments with additional ones passed via ellipsis
     # Which are formals of the function
+    ellips$log <- ellips$log.p <- ellips$lower.tail <- NULL
     indf <- names(ellips) %in% formalArgs(densF)
     indF <- names(ellips) %in% formalArgs(distF)
     if (!is.null(quantF)) {
@@ -438,6 +561,12 @@ smith.penult <- function(family, method = c("bm", "pot"), u, qu, m, returnList =
     }
     fn.arg <- ellips[which(indf * (indf == indF) == 1)]
     method <- match.arg(method)
+    logRecipHaz <- FALSE
+    if(isTRUE(all("log" %in% formalArgs(densF),
+                  c("log.p", "lower.tail")%in% formalArgs(distF)))){
+      logRecipHaz <- TRUE
+    }
+
     # Distribution function, density and density derivative
     densFn <- function(x) {
         do.call(densF, c(x = x, fn.arg))
@@ -476,7 +605,7 @@ smith.penult <- function(family, method = c("bm", "pot"), u, qu, m, returnList =
                 if (abs(bmroot$f.root) < 1e-05) {
                   return(bmroot$root)
                 } else {
-                  warning("Could not find `bm` using numerical root finder.")
+                  warning("Could not find \"bm\" using numerical root finder.")
                   return(NA)
                 }
             }
@@ -514,16 +643,36 @@ smith.penult <- function(family, method = c("bm", "pot"), u, qu, m, returnList =
         }  else if(!missing(u) && missing(qu)){
          qu <-  sapply(u, function(q){distFn(x = q)})
         }
+      if(logRecipHaz){
+        # Compute reciprocal hazard on log scale to avoid overflow
+        phi <- function(x){
+          exp(do.call(distF,
+                      c(list(q = x),
+                        fn.arg,
+                        lower.tail = FALSE,
+                        log.p = TRUE)) -
+                do.call(densF, c(list(x = x),
+                                 fn.arg,
+                                 log = TRUE))
+              )
+        }
+        dphi <- function(x) {
+          sapply(x, function(xval) {
+            - 1 - sign(ddensFn(xval))*exp(do.call(distF, c(q = xval, fn.arg, lower.tail = FALSE, log.p = TRUE)) + log(abs(ddensFn(xval)))  - 2*do.call(densF, c(x = xval, fn.arg, log = TRUE)))
+          })
+        }
+      } else {
         phi <- function(x) {
             sapply(x, function(xval) {
-                (1 - distFn(xval))/densFn(xval)
+                 (1 - distFn(xval))/densFn(xval)
             })
         }
         dphi <- function(x) {
             sapply(x, function(xval) {
-                -1 - (1 - distFn(xval)) * ddensFn(xval)/(densFn(xval)^2)
-            })
+                 -1 - (1 - distFn(xval)) *
+                ddensFn(xval)/(densFn(xval)^2)})
         }
+      }
         if (returnList) {
             params <- list(u = u, scale = phi(u), shape = dphi(u),  qu = qu)
         } else {
@@ -658,7 +807,7 @@ smith.penult.fn <- function(loc, scale, shape, eps, rho = NULL, method = c("bm",
     if (method == "bm") {
         if (!mdaGumbel) {
             if (is.null(rho)) {
-                stop("Invalid `rho' parameter")
+                stop("Invalid \"rho\" parameter")
             }
             GEV3rd <- function(x) {
                 # , an, bn, gamma, eps, rho
@@ -703,7 +852,7 @@ smith.penult.fn <- function(loc, scale, shape, eps, rho = NULL, method = c("bm",
     } else if (method == "pot") {
         if (!mdaGumbel) {
             if (is.null(rho)) {
-                stop("Invalid `rho' parameter")
+                stop("Invalid \"rho\" parameter")
             }
             # Peaks-over-threshold - GP-like distribution functions and densities , an, bn, gamma, eps, rho
             GP3rd <- function(x) {

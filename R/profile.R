@@ -79,14 +79,16 @@
 #' either a vector of numbers or a vector of names. If missing, all parameters are considered.
 #' @param level	confidence level, with default value of 0.95
 #' @param prob percentiles, with default giving symmetric 95\% confidence intervals
+#' @param method string for the method, either \code{cobs} (constrained robust B-spline from eponym package) or \code{smooth.spline}
 #' @param ... additional arguments passed to functions. Providing a logical \code{warn=FALSE} turns off warning messages when the lower or upper confidence interval for \code{psi} are extrapolated beyond the provided calculations.
 #' @param print should a summary be printed. Default to \code{FALSE}.
 #' @return returns a 2 by 3 matrix containing point estimates, lower and upper confidence intervals based on the likelihood root and modified version thereof
 #' @export
-confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1-level)/2), print = FALSE, ...) {
+confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1-level)/2), print = FALSE, method = c("cobs","smooth.spline"), ...) {
   if(!isTRUE(all.equal(diff(prob),level, check.attributes = FALSE))){
-   warning("Incompatible arguments: `level` does not match `prob`.")
+   warning("Incompatible arguments: \"level\" does not match \"prob\".")
   }
+  method <- match.arg(method[1], c("cobs","smooth.spline"))
     args <- list(...)
     if ("warn" %in% names(args) && is.logical(args$warn)) {
         warn <- args$warn
@@ -94,7 +96,7 @@ confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1
         warn <- TRUE
     }
     if (length(prob) != 2) {
-        stop("`prob` must be a vector of size 2")
+        stop("\"prob\" must be a vector of size 2")
       prob <- sort(prob)
     }
     if (missing(parm)) {
@@ -132,7 +134,7 @@ confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1
         ind <- unique(ind[ind %in% 1:4])
     }
     if (length(ind) == 0) {
-        stop("Invalid `parm` argument.")
+        stop("Invalid \"parm\" argument.")
     }
     qulev <- qnorm(1-prob)
     conf <- matrix(ncol = 4, nrow = 3)
@@ -150,8 +152,8 @@ confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1
             if (is.null(object$normal)) {
                 object$normal <- c(object$psi.max, object$std.error)
             }
-            if (requireNamespace("cobs", quietly = TRUE)) {
-                fit.r <- cobs::cobs(x = object$r, y = object$psi, #constraint = "decrease",
+            if (method == "cobs" && requireNamespace("cobs", quietly = TRUE)) {
+                fit.r <- cobs::cobs(x = object$r, y = object$psi, constraint = "decrease",
                   lambda = 0, ic = "SIC", pointwise = cbind(0, 0, object$normal[1]), knots.add = TRUE,
                   repeat.delete.add = TRUE, print.mesg = FALSE, print.warn = FALSE)
                 pr <- predict(fit.r, c(0, qulev))[,2]
@@ -173,8 +175,8 @@ confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1
             if (is.null(object$rstar)) {
                 break
             }
-            if (requireNamespace("cobs", quietly = TRUE)) {
-                fit.rst <- cobs::cobs(x = object$rstar, y = object$psi, #constraint = "decrease",
+            if (method == "cobs" && requireNamespace("cobs", quietly = TRUE)) {
+                fit.rst <- cobs::cobs(x = object$rstar, y = object$psi, constraint = "decrease",
                   lambda = 0, ic = "SIC", knots.add = TRUE, repeat.delete.add = TRUE, print.mesg = FALSE,
                   print.warn = FALSE)
                 prst <- predict(fit.rst, c(0, qulev))[,2]
@@ -202,7 +204,7 @@ confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1
             if (is.null(object$tem.pll)) {
                 break
             }
-            if (requireNamespace("cobs", quietly = TRUE)) {
+            if (method == "cobs" && requireNamespace("cobs", quietly = TRUE)) {
                 fit.mtem <- cobs::cobs(x = sign(object$tem.mle - object$psi) * sqrt(-2 * (object$tem.pll -
                   object$tem.maxpll)), y = object$psi, constraint = "decrease", lambda = 0,
                   ic = "SIC", knots.add = TRUE, repeat.delete.add = TRUE, print.mesg = FALSE,
@@ -220,7 +222,7 @@ confint.eprof <- function(object, parm, level = 0.95, prob = c((1-level)/2, 1-(1
             if (is.null(object$empcov.pll)) {
                 break
             }
-            if (requireNamespace("cobs", quietly = TRUE)) {
+            if (method == "cobs" && requireNamespace("cobs", quietly = TRUE)) {
                 fit.mempcov <- cobs::cobs(x = sign(object$empcov.mle - object$psi) * sqrt(-2 *
                   (object$empcov.pll - object$empcov.maxpll)), y = object$psi, constraint = "decrease",
                   lambda = 0, ic = "SIC", knots.add = TRUE, repeat.delete.add = TRUE, print.mesg = FALSE,
@@ -477,7 +479,7 @@ plot.eprof <- function(x, ...) {
 gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"),
                     mod = "profile", dat, N = NULL, p = NULL, q = NULL, correction = TRUE, plot = TRUE, ...) {
 
-    oldpar <- param <- match.arg(param)
+    param <- match.arg(param)
     mod <- match.arg(mod, c("profile","tem", "modif"), several.ok = TRUE)
     # Parametrization profiling for quant over scale is more numerically stable
     if (param == "quant") {
@@ -486,6 +488,7 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
         N = 1
         param <- "Nquant"
     }
+    oldpar <- match.arg(param, choices = c("loc", "scale", "shape", "quant", "Nmean", "Nquant"), several.ok = FALSE)
     # Arguments for parametrization of the log likelihood
     if (param %in% c("loc", "scale", "shape")) {
         args <- c("loc", "scale", "shape")
@@ -497,21 +500,21 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
     # Sanity checks to ensure all arguments are provided
     if (is.null(N)) {
         if (param %in% c("Nmean", "Nquant")) {
-            stop("Argument `N` missing. Procedure aborted")
+            stop("Argument \"N\" missing. Procedure aborted")
         } else {
             N <- NA
         }
     }
     if (is.null(q)) {
         if (param == "Nquant") {
-            stop("Argument `q` missing. Procedure aborted")
+            stop("Argument \"q\" missing. Procedure aborted")
         } else {
             q <- NA
         }
     }
     if (is.null(p)) {
         if (param == "quant") {
-            stop("Argument `p` missing. Procedure aborted")
+            stop("Argument \"p\" missing. Procedure aborted")
         } else {
             p <- NA
         }
@@ -572,7 +575,7 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
             x0 = c(median(dat/sigmat), 0.05)
             if (is.nan(gev.ll(c(x0[1], sigmat, x0[2]), dat = dat))) {
                 constr_fit <- try(evd::fgev(x = dat, std.err = FALSE, scale = sigmat, shape = x0[2]))
-                if (!is.character(constr_fit)) {
+                if (!inherits(constr_fit, what = "try-error")) {
                   if (constr_fit$convergence == "successful") {
                     x0 <- as.vector(c(constr_fit$estimate["loc"], 0.05))
                   } else {
@@ -631,7 +634,7 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
         #   ifelse(is.infinite(val) || is.na(val), 1e10, val)},
         #   gr = function(par){ val <- -gev.score(c(par[1], exp(par[2]), xit), dat = dat)[-ind]},
         #   hin = function(par){c(ifelse(xit <= 0, exp(par[2]) + xit*(xmax-par[1]), exp(par[2]) + xit*(xmin-par[1])))} ) }
-        #    if(!is.character(opt)){
+        #    if(!inherits(opt, what = "try-error")){
         # if(all(c(opt$convergence > 0, abs(gev.score(c(opt$par, xit), dat = dat)[1:2]) < 5e-4))){
         # return(c(opt$par, opt$value)) } else { #evd::fgev(start = list(loc = opt$par[1], scale =
         # opt$par[2]), shape = xit, # x = dat, method = 'BFGS', control=list(reltol=1e-10, abstol =
@@ -666,7 +669,7 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
             }, hin = function(par) {
                 ifelse(xit <= 0, par[2] + xit * (xmax - par[1]), par[2] + xit * (xmin - par[1]))
             }, localsolver = "SLSQP"))))
-            if (!is.character(opt)) {
+            if (!inherits(opt, what = "try-error")) {
                 if (opt$convergence > 0 && !isTRUE(all.equal(opt$value, 1e+10))) {
                   opt2 <- suppressMessages(suppressWarnings(
                     nloptr::slsqp(x0 = opt$par, fn = function(par) {
@@ -809,12 +812,12 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
         }
 
         # Return levels, quantiles or value-at-risk
-    } else if (param == "quant") {
+    } else if (param == "quant") { # THIS IS NOT EXECUTED ANYMORE...
         maxll <- gevr.ll(mle, dat = dat, p = p)
         std.error <- sqrt(solve(gevr.infomat(par = mle, dat = dat, method = "exp", p = p))[1])
         constr.mle.quant <- function(quant) {
             fitted <- try(evd::fgev(x = dat, prob = p, quantile = quant, method = "Neld", std.err = FALSE))
-            if (!is.character(fitted)) {
+            if (!inherits(fitted, what = "try-error")) {
                 fitted <- optim(par = list(scale = log(fitted$estimate[1]), shape = fitted$estimate[2]),
                   dat = dat, p = p, fn = function(lambda, p, dat) {
                     gevr.ll.optim(c(quant, lambda), dat = dat, p = p)
@@ -973,7 +976,7 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
             # (zt-par[1])*par[2]/(N^par[2]*(log(1/q))^(-par[2])-1), mean =
             # (zt-par[1])*par[2]/(N^par[2]*gamma(1-par[2])-1)) c(sigma, sigma + par[2]*(xmax-par[1]),
             # sigma + par[2]*(xmin-par[1]))}, control.outer = list (trace = FALSE) )))
-            if (!is.character(opt)) {
+            if (!inherits(opt, what = "try-error")) {
                 # if(opt$convergence == 0 && !isTRUE(all.equal(opt$value, 1e10))){
                 if (opt$convergence > 0 && !isTRUE(all.equal(opt$value, 1e+10))) {
                   opt2 <- suppressMessages(suppressWarnings(
@@ -988,7 +991,7 @@ gev.pll <- function(psi, param = c("loc", "scale", "shape", "quant", "Nmean", "N
                       1), mean = (zt - par[1]) * par[2]/(N^par[2] * gamma(1 - par[2]) - 1))
                     c(sigma, sigma + par[2] * (xmax - par[1]), sigma + par[2] * (xmin - par[1]))
                   })))
-                  if (!is.character(opt2)) {
+                  if (!inherits(opt2, what = "try-error")) {
                     if (opt2$convergence > 0 && !isTRUE(all.equal(opt2$value, 1e+10))) {
                       return(c(opt2$par, opt2$value))
                     }
@@ -1273,30 +1276,30 @@ gpd.pll <- function(psi, param = c("scale", "shape", "quant", "VaR", "ES", "Nmea
         args <- c(param, "shape")
     }
     # Sanity checks to ensure all arguments are provided
-    if (missing(N)) {
+    if (is.null(N)) {
         if (param %in% c("Nmean", "Nquant")) {
-            stop("Argument `N` missing. Procedure aborted")
+            stop("Argument \"N\" missing. Procedure aborted")
         } else {
             N <- NA
         }
     }
-    if (missing(m)) {
+    if (is.null(m)) {
         if (param %in% c("VaR", "ES")) {
-            stop("Argument `m` missing. Procedure aborted")
+            stop("Argument \"m\" missing. Procedure aborted")
         } else {
             m <- NA
         }
     }
-    if (missing(p)) {
+    if (is.null(p)) {
         if (param == "quant") {
-            stop("Argument `p` missing. Procedure aborted")
+            stop("Argument \"p\" missing. Procedure aborted")
         } else {
             p <- NA
         }
     }
-    if (missing(q)) {
+    if (is.null(q)) {
         if (param == "Nquant") {
-            stop("Argument `q` missing. Procedure aborted")
+            stop("Argument \"q\" missing. Procedure aborted")
         } else {
             q <- NA
         }
@@ -2033,7 +2036,7 @@ plot.fr <- function(x, ...) {
             whichPlot <- (1:4)[c(1:4 %in% whichPlot)]
         } else if ("all" %in% names(list(...))) {
             if (!is.logical(all)) {
-                stop("Invalid `all' parameter")
+                stop("Invalid \"all\" parameter")
             }
             if (list(...)$all) {
                 whichPlot <- 1:4
@@ -2118,17 +2121,19 @@ plot.fr <- function(x, ...) {
 #' @details If available, the function uses \code{cobs} from the eponym package. The latter handles constraints and smoothness penalties, and is more robust than the equivalent \code{\link[stats]{smooth.spline}}.
 #'
 #' @param fr an object of class \code{fr}, normally the output of \link{gpd.tem} or \link{gev.tem}.
-#'
+#' @param method string for the method, either \code{cobs} (constrained robust B-spline from eponym package) or \code{smooth.spline}
 #' @return an object of class \code{fr}, containing as additional arguments \code{spline} and a modified \code{rstar} argument.
+#' @keywords internal
 #' @export
-spline.corr <- function(fr) {
+spline.corr <- function(fr, method = c("cobs","smooth.spline")) {
     # Step 1: fit a smoothing spline to rstar If fit failed for some values (for example when
     # shape forced to be < 1) Remove those values
+    method <- match.arg(method[1], choices = c("cobs","smooth.spline"))
     if (all(is.nan(fr$q)) || all(is.nan(fr$rstar))) {
         # If could not compute Fraser-Reid correction, abort
         return(fr)
     }
-    fitfailed <- which(is.na(fr$r))
+    fitfailed <- which(!is.finite(fr$r))
     if (length(fitfailed) > 0) {
         fr$r <- fr$r[-fitfailed]
         fr$rstar <- fr$rstar[-fitfailed]
@@ -2137,7 +2142,7 @@ spline.corr <- function(fr) {
     }
     w <- pchisq(fr$r^2, 0.5)
     # If any correction for q failed and returned NA
-    corfailed <- which(is.na(fr$rstar))
+    corfailed <- which(!is.finite(fr$rstar))
     # If equispaced values for psi between MLE and other, then we have r = 0
     corfailed <- c(corfailed, which(fr$r == 0))
     if (length(corfailed) > 0) {
@@ -2148,7 +2153,7 @@ spline.corr <- function(fr) {
         resp <- (fr$rstar - fr$r)
         regr <- fr$r
     }
-    if (requireNamespace("cobs", quietly = TRUE)) {
+    if (method == "cobs" && requireNamespace("cobs", quietly = TRUE)) {
         spline <- cobs::cobs(y = resp, x = regr, w = w, constraint = "none", lambda = 1, nknots = 20,
             print.mesg = FALSE, print.warn = FALSE)$fitted
     } else {
@@ -2183,6 +2188,62 @@ spline.corr <- function(fr) {
         fr$rstar <- predict(spline, fr$r)$y + fr$r
     }
     return(fr)
+}
+
+#' Bridging the singularity for higher order asymptotics
+#'
+#' The correction factor \eqn{\log(q/r)/r} for the
+#' likelihood root is unbounded in the vincinity of
+#' the maximum likelihood estimator. The thesis of
+#' Rongcai Li (University of Toronto, 2001)
+#' explores different ways of bridging this
+#' singularity, notably using asymptotic expansions.
+#'
+#' The poor man's method used here consists in
+#' fitting a robust regression to \eqn{1/q-1/r}
+#' as a function of \eqn{r} and using predictions
+#' from the model to solve for \eqn{q}. This
+#' approach is seemingly superior to that
+#' previously used in \link{spline.corr}.
+#'
+#' @param fran object of class \code{fr}
+#' @param print.warning logical; should warning message be printed? Default to \code{FALSE}
+##' @return an object of class \code{fr}, containing as additional arguments \code{spline} and a modified \code{rstar} argument.
+#' @keywords internal
+#' @export
+tem.corr <- function(fr, print.warning = FALSE) {
+  if(!requireNamespace("MASS", quietly = TRUE)){
+    stop("The \"MASS\" package is required for this function to work")
+  }
+   if (all(is.nan(fr$q)) || all(is.nan(fr$rstar))) {
+    # If could not compute Fraser-Reid correction, abort
+    return(fr)
+  }
+  fitfailed <- which(!is.finite(fr$r))
+  if (length(fitfailed) > 0) {
+    fr$r <- fr$r[-fitfailed]
+    fr$rstar <- fr$rstar[-fitfailed]
+    fr$q <- fr$q[-fitfailed]
+    fr$psi <- fr$psi[-fitfailed]
+  }
+  if(length(fr$psi) < 25L){
+    if(print.warning){
+    warning("The correction for the tangent exponential model\n is based on less than 25 observations.")
+    }
+  }
+  # this is approximately linear for fixed data
+  resp <- 1/fr$q - 1/fr$r
+  # fit a robust regression to discount observations that are outlying
+  robust_reg <- MASS::rlm(resp ~ fr$r)
+  # Replace q values by predictions
+  pred <- predict(robust_reg)
+  qhat <- 1/(pred + 1/fr$r)
+  fr$q_old <- fr$q
+  fr$rstar_old <- fr$rstar
+  fr$q <- qhat
+  fr$rstar <- fr$r + log(fr$q/fr$r)/fr$r
+  fr$tem.psimax
+  return(fr)
 }
 
 
@@ -2312,7 +2373,7 @@ gpd.tem <- function(dat, param = c("scale", "shape", "quant", "VaR", "ES", "Nmea
     psi = NULL, m = NULL, threshold = 0, n.psi = 50, N = NULL, p = NULL, q = NULL, plot = FALSE,
     correction = TRUE) {
     if (param %in% c("VaR", "ES") && is.null(m)) {
-        stop("Parameter `m' missing")
+        stop("Parameter \"m\" missing")
     }
     dat <- dat - threshold
     tem <- gpd.pll(psi = psi, param = param, mod = "tem", dat = dat, N = N, m = m, mle = NULL,

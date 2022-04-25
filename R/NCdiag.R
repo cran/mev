@@ -10,22 +10,21 @@
 #' test for equality of the shape parameters over
 #' multiple thresholds under the generalized Pareto model.
 #'
-#' @param x  raw data
+#' @param xdat numeric vector of raw data
 #' @param u \code{m}-vector of thresholds (sorted from smallest to largest)
 #' @param GP.fit function used to optimize the generalized Pareto model.
 #' @param do.LRT boolean indicating whether to perform the likelihood ratio test (in addition to the score test)
 #' @param size level at which a horizontal line is drawn on multiple threshold plot
-#' @param my.xlab (optional) x-axis label
 #' @param xi.tol numerical tolerance for threshold distance; if the absolute value of \code{xi1.hat} is less than \code{xi.tol} use linear interpolation
 #'                to evaluate score vectors, expected Fisher information matrices, Hessians
-#'
+#' @param plot logical; if \code{TRUE}, return a plot of p-values against threshold.
+#' @param ... additional parameters passed to \code{plot}
 #' @details The default method is \code{'Grimshaw'} using the reduction of the parameters to a one-dimensional
 #' maximization. Other options are one-dimensional maximization of the profile the \code{nlm} function or \code{optim}.
 #' Two-dimensional optimisation using 2D-optimization \code{\link[ismev]{ismev}} using the routine
 #' from \code{gpd.fit} from the \code{ismev} library, with the addition of the algebraic gradient.
 #' The choice of \code{GP.fit} should make no difference but the options were kept.
-#' \bold{Warning}: the function is not robust
-#' and will not recover from failure of the maximization routine, returning various error messages.
+#' \bold{Warning}: the function will not recover from failure of the maximization routine, returning various error messages.
 #'
 #'
 #' @references Grimshaw (1993). Computing Maximum Likelihood Estimates for the Generalized
@@ -40,14 +39,25 @@
 #' @examples
 #' \dontrun{
 #' data(nidd)
-#' u <- quantile(nidd, seq(0.85, 0.99, by = 0.01))
+#' u <- seq(65,90, by = 1L)
 #' NC.diag(nidd, u, size = 0.05)
 #' }
-NC.diag <- function(x, u, GP.fit = c("Grimshaw", "nlm", "optim", "ismev"), do.LRT = FALSE, size = NULL, my.xlab = NULL, xi.tol = 0.001) {
+NC.diag <- function(
+    xdat,
+    u,
+    GP.fit = c("Grimshaw", "nlm", "optim", "ismev"),
+    do.LRT = FALSE,
+    size = NULL,
+    plot = TRUE,
+    ...,
+    xi.tol = 0.001
+) {
+
+  args <- list(...)
   if (any(diff(u) <= 0)) {
     warning("Thresholds supplied in u are not in increasing order")
   }
-  x <- as.vector(x)
+  x <- as.numeric(xdat[is.finite(xdat)])
   u <- sort(u)
   n_u <- length(u)  # total number of thresholds
   #------------------------------------------------------------------------------#
@@ -61,19 +71,19 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "nlm", "optim", "ismev"), do.LR
   }))  # number of excesses of each threshold
   z$n.between <- c(-diff(z$nexc), z$nexc[n_u])
   # sample sizes between thresholds (and above the highest threshold)
-  for (i in 1:n_u) {
+  for (i in seq_len(n_u)) {
     # loop over all thresholds
     if (GP.fit == "nlm") {
-      temp <- .gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol, calc.se = F)  # threshold u[j1], 1D max, algebraic Hessian
+      temp <- .gpd_1D_fit(x, u[i], show = FALSE, xi.tol = xi.tol, calc.se = F)  # threshold u[j1], 1D max, algebraic Hessian
       phi.init <- temp$mle[2]/temp$mle[1]  # better initial estimate of phi
       temp <- .GP_1D_fit_nlm(x, u[i], init.val = phi.init, gradtol = 1e-20, steptol = 1e-20, calc.se = F)
       # 1D max, use nlm to get gradients v close to zero
     } else if (GP.fit == "ismev") {
-      temp <- .gpd_2D_fit(x, u[i], show = F)  # threshold u[i], ismev GP fitting function
-      temp <- .gpd_2D_fit(x, u[i], show = F, siginit = temp$mle[1], shinit = temp$mle[2], method = "BFGS", reltol = 1e-30, abstol = 1e-30)
+      temp <- .gpd_2D_fit(x, u[i], show = FALSE)  # threshold u[i], ismev GP fitting function
+      temp <- .gpd_2D_fit(x, u[i], show = FALSE, siginit = temp$mle[1], shinit = temp$mle[2], method = "BFGS", reltol = 1e-30, abstol = 1e-30)
     } else if (GP.fit == "optim") {
-      temp <- .gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol)  # threshold u[i], 1D max, algebraic Hessian
-      temp <- .gpd_1D_fit(x, u[i], show = F, xi.tol = xi.tol, phi.input = temp$mle[2]/temp$mle[1], reltol = 1e-30, abstol = 1e-30)
+      temp <- .gpd_1D_fit(x, u[i], show = FALSE, xi.tol = xi.tol)  # threshold u[i], 1D max, algebraic Hessian
+      temp <- .gpd_1D_fit(x, u[i], show = FALSE, xi.tol = xi.tol, phi.input = temp$mle[2]/temp$mle[1], reltol = 1e-30, abstol = 1e-30)
       # threshold u[i], 1D max, algebraic Hessian
     } else if (GP.fit == "Grimshaw") {
       yy <- x[x > u[i]] - u[i]  # thresholds excesses
@@ -126,7 +136,7 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "nlm", "optim", "ismev"), do.LR
     # ........... End of test.stat.calc() ............
 
     e.stat <- test.stat.calc(score, e.info)  # score test statistic
-    e.p <- pchisq(e.stat, df = m - 1, lower.tail = F)  # p-value
+    e.p <- pchisq(e.stat, df = m - 1, lower.tail = FALSE)  # p-value
     c(e.stat, e.p)
   }
   # .......................................................  end of function score.test
@@ -221,24 +231,76 @@ NC.diag <- function(x, u, GP.fit = c("Grimshaw", "nlm", "optim", "ismev"), do.LR
       z$LRT.test.stats[i] <- temp[1]
     }
   }  #.......................# end of loop over thresholds
-  z$u <- u[1:(n_u - 1)]  # (lowest) thresholds for each test
-
-  # Produce the plot ......
-
-  my.ylab <- "p-value"
-  if (is.null(my.xlab))
-    my.xlab <- "threshold"
-  plot(z$u, z$e.p.values, type = "b", xlab = my.xlab, ylab = "p-value", pch = 16, ylim = c(0, 1))
-  # axis(3, at=u[1:num.u], labels=z$n.between, cex.axis=0.7)
-  axis(3, at = u[1:n_u], labels = z$nexc[1:n_u], cex.axis = 0.7)
-  if (do.LRT)
-    lines(z$u, z$LRT.p.values, type = "b", lty = 4, pch = 2)
-  if (!is.null(size))
-    abline(h = size, lty = 2)
-  #
+  z$u <- u[seq_len(n_u - 1)]  # (lowest) thresholds for each test
+  class(z) <- "mev_thdiag_northropcoleman"
+  if(isTRUE(plot)){
+    plot(z, size = size, ...)
+  }
   invisible(z)
 }
 
+#' @export
+plot.mev_thdiag_northropcoleman <- function(x, size = 0.05, ...){
+  args <- list(...)
+  n_u <- length(x$u) + 1L
+    # Backward compatibility
+    if(!is.null(args$my.xlab)){
+      args$xlab <- args$my.xlab
+      args$my.xlab <- NULL
+    }
+    # Produce the plot ......
+    if(is.null(args$ylab)){
+      args$ylab <- "p-value"
+    }
+    if (is.null(args$xlab)){
+      args$xlab <- "threshold"
+    }
+    if(is.null(args$type)){
+      args$type <- "b"
+    }
+    if(is.null(args$pch)){
+      args$pch <- 16
+    }
+    if(is.null(args$ylim)){
+      args$ylim <- c(0,1)
+    }
+    args$x <- x$u
+    args$y <- x$e.p.values
+    do.call(what = "plot", args = args)
+    axis(3, at = x$u,
+         labels = x$nexc[-length(x$nexc)],
+         cex.axis = 0.7)
+    if (!is.null(x$LRT.p.values)){
+      lines(x$u, x$LRT.p.values,
+            type = "b",
+            lty = 4,
+            pch = 2)
+    }
+    if (!is.null(size)){
+      if(isTRUE(all(is.numeric(size),
+                    size < 1, size > 0))){
+      abline(h = size, lty = 2)
+      }
+    }
+  return(invisible(NULL))
+}
+
+
+print.mev_thdiag_northropcoleman <-
+  function(x, digits = max(3, getOption("digits") - 3), level = 0.05, ...) {
+    cat("Threshold selection method: Northrop and Coleman penultimate model.\n")
+    method <- "Score test"
+    thselect <- x$thresh[which.max(which(x$e.p.values > level))]
+    if(!is.null(x$LRT.p.values)){
+      method <- "Likelihood ratio test"
+      thselect <- x$thresh[which.max(which(x$LRT.p.values > level))]
+    }
+    cat(method, "for piecewise generalized Pareto models.", "\n")
+    cat("Largest threshold above which we always fail to reject null hypothesis of common generalized Pareto at level", level,"\n")
+    cat("Selected threshold:", round(thselect, digits), "\n")
+
+    return(invisible(NULL))
+  }
 #------------------------------------------------------------------------------#
 # Algebraic calculation of score vector #
 #------------------------------------------------------------------------------#

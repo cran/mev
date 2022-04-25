@@ -338,7 +338,7 @@ gev.Fscore <- function(par, dat, method = "obs") {
         mdat <- min(dat)
     }
     if (((mdat - par[1]) * par[3] + par[2]) < 0) {
-        # warning('Error in `gev.Fscore`: data outside of range specified by parameter, yielding a zero likelihood')
+        # warning('Error in \"gev.Fscore\": data outside of range specified by parameter, yielding a zero likelihood')
         return(rep(1e+08, 3))
     } else {
         gev.score(par, dat) - gev.infomat(par, dat, method) %*% gev.bias(par, length(dat))
@@ -385,7 +385,7 @@ gpd.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
     # Basic bias correction - substract bias at MLE parbc=par-bias(par) Other bias correction - find bias corrected that solves
     # implicit eqn parbc=par-bias(parbc)
     if (length(par) != 2) {
-        stop("Invalid `par` argument.")
+        stop("Invalid \"par\" argument.")
     }
     # Basic bias correction - substract bias at MLE parbc=par-bias(par) bcor1 <- function(par, dat){ par-gpd.bias(par,length(dat))}
     # Other bias correction - find bias corrected that solves implicit eqn parbc=par-bias(parbc)
@@ -407,14 +407,14 @@ gpd.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
         }
         if (st[2] < -1/3 || st[2] > 1) {
             # If value is the MLE, make sure that it is a sensible starting value i.e. does not violate the constraints for the moments.
-            warning("Error in gpd.bcor`: invalid starting value for the shape (less than -1/3). Aborting")
+            warning("Error in \"gpd.bcor\": invalid starting value for the shape (less than -1/3). Aborting")
             return(rep(NA, 2))
         }
         # Root finding
         bcor.rf <- try(nleqslv::nleqslv(x = st, fn = function(parbc, par, dat) {
             parbc - par + gpd.bias(parbc, length(dat))
         }, par = par, dat = dat), silent = TRUE)
-        if (!is.character(bcor.rf)) {
+        if (!inherits(bcor.rf, what = "try-error")) {
             if (bcor.rf$termcd == 1 || (bcor.rf$termcd == 2 && isTRUE(all.equal(bcor.rf$fvec, rep(0, 2), tolerance = 1e-06)))) {
                 return(bcor.rf$x)
             }
@@ -448,7 +448,7 @@ gpd.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
         }
         par.firth <- try(suppressWarnings(nleqslv::nleqslv(fn = gpd.Fscoren, x = st, dat = dat, met = method, control = list(maxit = 1000))),
             silent = TRUE)
-        if (!is.character(par.firth)) {
+        if (!inherits(par.firth, what = "try-error")) {
             if (par.firth$termcd == 1 || (par.firth$termcd == 2 && isTRUE(all.equal(par.firth$fvec, rep(0, 2), tolerance = 1e-06)))) {
                 return(par.firth$x)
             }
@@ -521,7 +521,7 @@ gev.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
         }
         if (st[3] < -1/3 || st[3] > 1) {
             # If value is the MLE, make sure that it is a sensible starting value i.e. does not violate the constraints for the moments.
-            warning("Error in gev.bcor`: invalid starting value for the shape (less than -1/3). Aborting")
+            warning("Error in \"gev.bcor\": invalid starting value for the shape (less than -1/3). Aborting")
             return(rep(NA, 3))
         }
         # Root finding
@@ -529,14 +529,14 @@ gev.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
         bcor.rf <- try(nleqslv::nleqslv(x = st, fn = function(parbc, par, dat) {
             parbc - par + gev.bias(parbc, length(dat))
         }, par = par, dat = dat, control = list(maxit = 1000, xtol = 1e-10)), silent = TRUE)
-        if (!is.character(bcor.rf)) {
+        if (!inherits(bcor.rf, what = "try-error")) {
             if (bcor.rf$termcd == 1 || (bcor.rf$termcd %in% c(2, 3) && isTRUE(all.equal(bcor.rf$fvec, rep(0, 3), tolerance = 1e-06)))) {
                 return(bcor.rf$x)
             }
             bcor.rf <- try(nleqslv::nleqslv(x = st, fn = function(parbc, par, dat) {
                 parbc - par + gev.bias(parbc, length(dat))
             }, global = "none", par = par, dat = dat, control = list(maxit = 1000, xtol = 1e-10)), silent = TRUE)
-            if (!is.character(bcor.rf)) {
+            if (!inherits(bcor.rf, what = "try-error")) {
                 if (bcor.rf$termcd == 1 || (bcor.rf$termcd %in% c(2, 3) && isTRUE(all.equal(bcor.rf$fvec, rep(0, 3), tolerance = 1e-06)))) {
                   return(bcor.rf$x)
                 } else if (abs(bcor.rf$x[3]) < 0.025 && bcor.rf$termcd == 2 && isTRUE(all.equal(bcor.rf$fvec, rep(0, 3), tolerance = 0.01))) {
@@ -572,7 +572,7 @@ gev.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
         }
         par.firth <- try(suppressWarnings(nleqslv::nleqslv(fn = gev.Fscoren, x = st, dat = dat, met = method, control = list(maxit = 1000,
             xtol = 1e-10))), silent = TRUE)
-        if (!is.character(par.firth)) {
+        if (!inherits(par.firth, what = "try-error")) {
             # Try finding the root with default options
             if (par.firth$termcd == 1 || (par.firth$termcd %in% c(2, 3) && isTRUE(all.equal(par.firth$fvec, rep(0, 3), tolerance = 1e-06)))) {
                 return(par.firth$x)
@@ -580,11 +580,11 @@ gev.bcor <- function(par, dat, corr = c("subtract", "firth"), method = c("obs", 
             # Sometimes, method fails for values of xi close to zero - try with a full Broyden or Newton search
             par.firth <- try(suppressWarnings(nleqslv::nleqslv(fn = gev.Fscoren, x = st, dat = dat, met = method, control = list(maxit = 1000,
                 xtol = 1e-10), global = "none")), silent = TRUE)
-            if (!is.character(par.firth)) {
+            if (!inherits(par.firth, what = "try-error")) {
                 if (par.firth$termcd == 1 || (par.firth$termcd %in% c(2, 3) && isTRUE(all.equal(par.firth$fvec, rep(0, 3), tolerance = 1e-06)))) {
                   return(par.firth$x)
                 } else if (abs(par.firth$x[3]) < 0.025 && par.firth$termcd == 2 && isTRUE(all.equal(par.firth$fvec, rep(0, 3), tolerance = 0.05))) {
-                  warning(paste0("Approximate solution for Firth`s score equation with method `", method, "` - the shape is close to zero"))
+                  warning(paste0("Approximate solution for Firth's score equation with method \"", method, "\" - the shape is close to zero"))
                   return(par.firth$x)
                 }
             }

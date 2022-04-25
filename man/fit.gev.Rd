@@ -4,16 +4,27 @@
 \alias{fit.gev}
 \title{Maximum likelihood estimation for the generalized extreme value distribution}
 \usage{
-fit.gev(xdat, start = NULL, method = c("nlminb", "BFGS"), show = FALSE)
+fit.gev(
+  xdat,
+  start = NULL,
+  method = c("nlminb", "BFGS"),
+  show = FALSE,
+  fpar = NULL,
+  warnSE = FALSE
+)
 }
 \arguments{
 \item{xdat}{a numeric vector of data to be fitted.}
 
-\item{start}{numeric vector of starting values}
+\item{start}{named list of starting values}
 
 \item{method}{string indicating the outer optimization routine for the augmented Lagrangian. One of \code{nlminb} or \code{BFGS}.}
 
 \item{show}{logical; if \code{TRUE} (the default), print details of the fit.}
+
+\item{fpar}{a named list with optional fixed components \code{loc}, \code{scale} and \code{shape}}
+
+\item{warnSE}{logical; if \code{TRUE}, a warning is printed if the standard errors cannot be returned from the observed information matrix when the shape is less than -0.5.}
 }
 \value{
 a list containing the following components:
@@ -31,4 +42,11 @@ Values other than \code{0} indicate that the algorithm likely did not converge.
 }
 \description{
 This function returns an object of class \code{mev_gev}, with default methods for printing and quantile-quantile plots.
+The default starting values are the solution of the probability weighted moments.
+}
+\examples{
+xdat <- evd::rgev(n = 100)
+fit.gev(xdat, show = TRUE)
+# Example with fixed parameter
+fit.gev(xdat, show = TRUE, fpar = list(shape = 0))
 }

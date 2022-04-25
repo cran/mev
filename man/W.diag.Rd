@@ -16,8 +16,8 @@ W.diag(
   nbs = 1000,
   alpha = 0.05,
   plots = c("LRT", "WN", "PS"),
-  UseQuantiles = TRUE,
-  pmar = c(5, 5, 1, 1),
+  UseQuantiles = FALSE,
+  changepar = TRUE,
   ...
 )
 }
@@ -44,25 +44,29 @@ but rather the uppermost threshold will be at the \eqn{(q_2-1/k)}{q2-1/k} quanti
 
 \item{alpha}{significance level of the LRT}
 
-\item{plots}{vector of strings indicating which plots to produce; \code{LRT}= likelihood ratio test, \code{WN} = white noise, \code{PS} = parameter stability}
+\item{plots}{vector of strings indicating which plots to produce; \code{LRT}= likelihood ratio test, \code{WN} = white noise, \code{PS} = parameter stability. Use \code{NULL} if you do not want plots to be produced}
 
 \item{UseQuantiles}{logical; use quantiles as the thresholds in the plot?}
 
-\item{pmar}{vector of length 4 giving the arguments for the plot margins in \code{par(mar=c(*,*,*,*))}.}
+\item{changepar}{logical; if \code{TRUE}, the graphical parameters (via a call to \code{par}) are modified.}
 
-\item{...}{additional parameters passed to \code{plot}.}
+\item{...}{additional parameters passed to \code{plot}, overriding defaults including}
 }
 \value{
 plots of the requested diagnostics and an invisible list with components
 \itemize{
-\item \code{MLE}  maximum likelihood estimates from all thresholds
-\item \code{Cov}  joint asymptotic covariance matrix for \eqn{\xi}, \eqn{\eta} or \eqn{\eta^{-1}}{1/\eta}.
-\item \code{WN}  values of the white noise process.
-\item \code{LRT} values of the likelihood ratio test statistic vs threshold.
-\item \code{pval} P-value of the likelihood ratio test.
-\item \code{k}  final number of thresholds used.
-\item \code{thresh} threshold selected by the likelihood ratio procedure.
-\item \code{mle.u} maximum likelihood estimates from selected threshold.
+\item{\code{MLE}}{maximum likelihood estimates from all thresholds}
+\item{\code{Cov}}{joint asymptotic covariance matrix for \eqn{\xi}, \eqn{\eta} or \eqn{\eta^{-1}}{1/\eta}}.
+\item{\code{WN}}{values of the white noise process}
+\item{\code{LRT}}{values of the likelihood ratio test statistic vs threshold}
+\item{\code{pval}}{\emph{P}-value of the likelihood ratio test}
+\item{\code{k}}{final number of thresholds used}
+\item{\code{thresh}}{threshold selected by the likelihood ratio procedure}
+\item{\code{qthresh}}{quantile level of threshold selected by the likelihood ratio procedure}
+\item{\code{cthresh}}{vector of candidate thresholds}
+\item{\code{qcthresh}}{quantile level of candidate thresholds}
+\item{\code{mle.u}}{maximum likelihood estimates for the selected threshold}
+\item{\code{model}}{model fitted}
 }
 }
 \description{
@@ -82,15 +86,22 @@ is transformed to exponential margins using the empirical distribution function.
 \examples{
 \dontrun{
 set.seed(123)
-W.diag(rexp(1000), model = 'nhpp', k = 20, q1 = 0)
 # Parameter stability only
-W.diag(abs(rnorm(5000)), model = 'nhpp', k = 30, q1 = 0, plots = "PS")
-xbvn <- mvrnorm(6000, mu = rep(0, 2), Sigma = cbind(c(1, 0.7), c(0.7, 1)))
+W.diag(xdat = abs(rnorm(5000)), model = 'nhpp',
+       k = 30, q1 = 0, plots = "PS")
+W.diag(rexp(1000), model = 'nhpp', k = 20, q1 = 0)
+xbvn <- mvrnorm(n = 6000,
+                mu = rep(0, 2),
+                Sigma = cbind(c(1, 0.7), c(0.7, 1)))
 # Transform margins to exponential manually
 xbvn.exp <- -log(1 - pnorm(xbvn))
-W.diag(apply(xbvn.exp, 1, min), model = 'exp', k = 30, q1 = 0) #rate parametrization
-W.diag(xbvn, model = 'exp', k = 30, q1 = 0)
-W.diag(apply(xbvn.exp, 1, min), model = 'invexp', k = 30, q1 = 0) #inverse rate parametrization
+#rate parametrization
+W.diag(xdat = apply(xbvn.exp, 1, min), model = 'exp',
+       k = 30, q1 = 0)
+W.diag(xdat = xbvn, model = 'exp', k = 30, q1 = 0)
+#inverse rate parametrization
+W.diag(xdat = apply(xbvn.exp, 1, min), model = 'invexp',
+       k = 30, q1 = 0)
 }
 }
 \references{

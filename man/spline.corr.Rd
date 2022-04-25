@@ -4,10 +4,12 @@
 \alias{spline.corr}
 \title{Spline correction for Fraser-Reid approximations}
 \usage{
-spline.corr(fr)
+spline.corr(fr, method = c("cobs", "smooth.spline"))
 }
 \arguments{
 \item{fr}{an object of class \code{fr}, normally the output of \link{gpd.tem} or \link{gev.tem}.}
+
+\item{method}{string for the method, either \code{cobs} (constrained robust B-spline from eponym package) or \code{smooth.spline}}
 }
 \value{
 an object of class \code{fr}, containing as additional arguments \code{spline} and a modified \code{rstar} argument.
@@ -28,3 +30,4 @@ While penalized (robust) splines often do a good job at capturing and correcting
 may also be driven by unusual values lying on the profile log-likelihood the curve or fail to detect outliers (or falsely identifying `correct' values as outliers). The user should always validate by comparing the plots of both the uncorrected (raw) output of the object with that of \code{spline.corr}.
 }
 
+\keyword{internal}

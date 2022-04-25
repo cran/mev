@@ -468,7 +468,7 @@ gev.dphi <- function(par, dat, V) {
 
 #' @title Generalized Pareto distribution (expected shortfall parametrization)
 #'
-#' @description Likelihood, score function and information matrix, bias,
+#' @description Likelihood, score function and information matrix,
 #' approximate ancillary statistics and sample space derivative
 #' for the generalized Pareto distribution parametrized in terms of expected shortfall.
 #'
@@ -512,7 +512,7 @@ NULL
 
 #' @title Generalized Pareto distribution (return level parametrization)
 #'
-#' @description Likelihood, score function and information matrix, bias,
+#' @description Likelihood, score function and information matrix,
 #' approximate ancillary statistics and sample space derivative
 #' for the generalized Pareto distribution parametrized in terms of return levels.
 #'
@@ -552,7 +552,7 @@ NULL
 
 #' @title Generalized extreme value distribution (return level parametrization)
 #'
-#' @description Likelihood, score function and information matrix, bias,
+#' @description Likelihood, score function and information matrix,
 #' approximate ancillary statistics and sample space derivative
 #' for the generalized extreme value distribution  parametrized in terms of the return level \eqn{z}, scale and shape.
 #'
@@ -626,7 +626,7 @@ gpde.score <- function(par, dat, m) {
     es = par[1]
     xi = par[2]
     if(missing(m)){
-      stop("User must provide `m` parameter in `gpde.score`.")
+      stop("User must provide \"m\" parameter in \"gpde.score\".")
     }
     xizero <- abs(xi) < 1e-4
     if(!xizero){
@@ -654,7 +654,7 @@ gpde.infomat <- function(par, dat, m, method = c("obs", "exp"), nobs = length(da
     es = as.vector(par[1])
     xi = as.vector(par[2])
     if(missing(m)){
-      stop("User must provide `m` parameter in `gpde.infomat`.")
+      stop("User must provide \"m\" parameter in \"gpde.infomat\".")
     }
     if (xi < -0.5) {
         return(matrix(NA, 2, 2))
@@ -764,7 +764,7 @@ gpde.dphi <- function(par, dat, V, m) {
 #' @export
 gpdr.ll <- function(par, dat, m) {
   if(missing(m)){
-    stop("Need to specify the reciprocal tail probability `m`")
+    stop("Need to specify the reciprocal tail probability \"m\"")
   }
     ym = par[1]
     xi = par[2]
@@ -808,7 +808,7 @@ gpdr.ll.optim <- function(par, dat, m) {
 #' @export
 gpdr.score <- function(par, dat, m) {
   if(missing(m)){
-    stop("Need to specify the reciprocal tail probability `m`")
+    stop("Need to specify the reciprocal tail probability \"m\"")
   }
     nn = length(dat)
     xi = par[2]
@@ -834,7 +834,7 @@ gpdr.score <- function(par, dat, m) {
 #' @export
 gpdr.infomat <- function(par, dat, m, method = c("obs", "exp"), nobs = length(dat)) {
   if(missing(m)){
-    stop("Need to specify the reciprocal tail probability `m`")
+    stop("Need to specify the reciprocal tail probability \"m\"")
   }
     xi = as.vector(par[2])
     r = as.vector(par[1])
@@ -1269,7 +1269,7 @@ gevr.dphi <- function(par, dat, p, V) {
 
 #' @title Generalized Pareto distribution (mean of maximum of N exceedances parametrization)
 #'
-#' @description Likelihood, score function and information matrix, bias,
+#' @description Likelihood, score function and information matrix,
 #' approximate ancillary statistics and sample space derivative
 #' for the generalized Pareto distribution parametrized in terms of average maximum of \code{N} exceedances.
 #'
@@ -1492,7 +1492,7 @@ gpdN.dphi <- function(par, dat, N, V) {
 
 #' @title Generalized extreme value distribution (quantile/mean of N-block maxima parametrization)
 #'
-#' @description Likelihood, score function and information matrix, bias,
+#' @description Likelihood, score function and information matrix,
 #' approximate ancillary statistics and sample space derivative
 #' for the generalized extreme value distribution  parametrized in terms of the
 #' quantiles/mean of N-block maxima parametrization \eqn{z}, scale and shape.
@@ -2150,7 +2150,7 @@ gevN.dphi <- function(par, dat, N, q = 0.5, qty = c("mean", "quantile"), V) {
 #' @param shape shape parameter
 #' @return an \code{n} by \code{r} matrix of samples from the point process, ordered from largest to smallest in each row.
 #' @export
-rrlarg <- function(n, r, loc, scale, shape){
+rrlarg <- function(n, r, loc = 0, scale = 1, shape = 0){
   U <- matrix(rexp(n*r), nrow = n, ncol = r)
   U <- t(apply(U, 1, cumsum))
   if(r == 1){
@@ -2205,15 +2205,24 @@ rlarg.ll <- function(par, dat){
  #Maximum is in first column, ordered
   dat <- as.matrix(dat)
   if(!isTRUE(all(dat[1,1] >= dat[1,]))){
-    stop("Observations in `dat` must be ordered from largest to smallest in each row.")
+    stop("Observations in \"dat\" must be ordered from largest to smallest in each row.")
   }
   r <- ncol(dat)
   n <- nrow(dat)
-  if(abs(par[3]) > 1e-7){
-  - sum((1+par[3]*(dat[,r]-par[1])/par[2])^(-1/par[3])) - n*r*log(par[2]) -
-      (1/par[3]+1)*sum(log1p(par[3]*(dat-par[1])/par[2]))
+  xmax <- max(dat[,1])
+  xmin <- min(dat[,r])
+  if((par[3] < 0)&(xmax > par[1] - par[2]/par[3]) || (par[3] > 0)&(xmin < par[1] - par[2]/par[3])){
+    return(-Inf)
+  }
+  if(isTRUE(all.equal(par[3],-1, check.attributes = FALSE))){
+    - sum((1+par[3]*(dat[,r]-par[1])/par[2])^(-1/par[3])) - n*r*log(par[2])
   } else{
-    -sum(exp((par[1]-dat[,r])/par[2])) - n*r*log(par[2]) - sum((dat-par[1])/par[2])
+    if(abs(par[3]) > 1e-7){
+      - sum((1+par[3]*(dat[,r]-par[1])/par[2])^(-1/par[3])) - n*r*log(par[2]) -
+        (1/par[3]+1)*sum(log1p(par[3]*(dat-par[1])/par[2]))
+    } else{
+      -sum(exp((par[1]-dat[,r])/par[2])) - n*r*log(par[2]) - sum((dat-par[1])/par[2])
+    }
   }
 }
 
@@ -2231,7 +2240,7 @@ rlarg.score <- function(par, dat){
   mu <- par[1]; sigma <- par[2]; xi <- par[3]
   dat <- as.matrix(dat)
   if(!isTRUE(all(dat[1,1] >= dat[1,]))){
-    stop("Observations in `dat` must be ordered from largest to smallest in each row.")
+    stop("Observations in \"dat\" must be ordered from largest to smallest in each row.")
   }
   r <- ncol(dat)
   n <- nrow(dat)
@@ -2278,11 +2287,11 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
       dat <- as.matrix(dat, ncol = 1)
     }
     if(nobs != nrow(dat)){
-      warning("Overriding value of `nobs` provided by the user")
+      warning("Overriding value of \"nobs\" provided by the user")
       nobs <- nrow(dat)
     }
     if(r != ncol(dat)){
-      warning("Overriding value of `r` provided by the user")
+      warning("Overriding value of \"r\" provided by the user")
       r <- ncol(dat)
     }
   }
@@ -2346,7 +2355,7 @@ rlarg.infomat <- function(par, dat, method = c("obs", "exp"), nobs = nrow(dat), 
   } else if(method == "obs"){
     #Partial check for ordering in first column
     if(!isTRUE(all(dat[1,1] >= dat[1,]))){
-      stop("Observations in `dat` must be ordered from largest to smallest in each row.")
+      stop("Observations in \"dat\" must be ordered from largest to smallest in each row.")
     }
     #Observed information matrix
     yr <- dat[,r]
@@ -2461,10 +2470,16 @@ pp.ll <- function(par, dat, u, np = 1){
 #' @keywords internal
 pp.score <- function(par, dat, u, np = 1){
   mu <- par[1]; sigma <- par[2]; xi <- par[3]; nu <- length(dat)
+  if(!isTRUE(all.equal(xi, 0, check.attributes = FALSE))){
   c(  -sum(xi*(1/xi + 1)/(sigma*((mu - dat)*xi/sigma - 1))) -  np*(-(mu - u)*xi/sigma + 1)^(-1/xi - 1)/sigma,
        sum((mu - dat)*xi*(1/xi + 1)/(sigma^2*((mu - dat)*xi/sigma - 1))) - nu/sigma + (mu - u)*np*((u - mu)*xi/sigma + 1)^(1/xi - 1)/(sigma^2*((u - mu)*xi/sigma + 1)^(2/xi)),
        - sum((mu - dat)*(1/xi + 1)/(sigma*((mu - dat)*xi/sigma - 1))) + sum(log1p(-(mu - dat)*xi/sigma)/xi^2) -
          np*(log1p((u - mu)*xi/sigma)/xi^2 - (mu - u)/(sigma*((mu - u)*xi/sigma - 1)*xi))/(-(mu - u)*xi/sigma + 1)^(1/xi))
+  } else{
+    c(-np*exp((mu-u)/sigma)/sigma + nu/sigma,
+    np*(mu-u)*exp((mu-u)/sigma)/sigma^2 - nu/sigma + sum((dat-mu)/sigma^2),
+    -1/2*np*(mu - u)^2*exp((mu-u)/sigma)/sigma^2 + sum(1/2*(mu + 2*sigma - dat)*(mu - dat)/sigma^2))
+  }
 }
 
 
@@ -2486,6 +2501,7 @@ pp.score <- function(par, dat, u, np = 1){
 #' @examples
 #' \dontrun{
 #' dat <- evd::rgpd(n <- 1e3, 0.1, 2, -0.1)
+#' np <- 10
 #' mle <- fit.pp(dat, threshold = 0, np =  np)$par
 #' info_obs <- pp.infomat(par = mle, dat = dat, method = "obs", u = 0, np = np)
 #' info_exp <- pp.infomat(par = mle, dat = dat, method = "exp", u = 0, np = np)
@@ -2496,7 +2512,7 @@ pp.infomat <- function(par, dat, method = c("obs", "exp"), u, np = 1, nobs = len
   if(method == "obs"){
     dat <- as.vector(dat)
     if(sum(dat >u) != length(dat)){
-     warning("`dat` contains non-exceedances")
+     warning("\"dat\" contains non-exceedances")
       dat <- dat[dat >u]
     }
   }

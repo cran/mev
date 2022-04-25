@@ -94,7 +94,7 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
     if (model == "ct") {
       if (length(param) != d) {
         if (length(param) == (d + 1)) {
-          warning("Use `sdir' model for the scaled extremal Dirichlet model.")
+          warning("Use \"sdir\" model for the scaled extremal Dirichlet model.")
           model = "sdir"
         } else {
           stop("Invalid arguments for the Coles and Tawn (extremal Dirichlet) model.")
@@ -355,7 +355,7 @@ rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "m
     if (model == "ct") {
       if (length(param) != d) {
         if (length(param) == (d + 1)) {
-          warning("Use `sdir' model for the scaled extremal Dirichlet model.")
+          warning("Use \"sdir model for the scaled extremal Dirichlet model.")
           model = "sdir"
         } else {
           stop("Invalid arguments for the Coles and Tawn (extremal Dirichlet) model.")
@@ -536,7 +536,7 @@ rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "m
     if(!any(zeroshape)){
       ustar <- max(ustar, (min(abs(shape))*(us-sum(loc))/sum(scale)+1)^(1/max(abs(shape))))
     } else if (all(zeroshape)){
-      ustar <- max(ustar, D*(exp((us-sum(loc))/sum(scale))^(1/d)))
+      ustar <- max(ustar, d*(exp((us-sum(loc))/sum(scale))^(1/d)))
     }
 
     } else if(riskf == "min"){
