@@ -53,6 +53,7 @@ intensBR <- function(tdat, Lambda, cholPrecis = NULL) {
 }
 
 
+
 #' Jacobian of the transformation from generalized Pareto to unit Pareto distribution
 #'
 #' If \code{dat} is a vector, the arguments \code{loc}, \code{scale} and \code{shape} should be numericals of length 1.
@@ -75,15 +76,16 @@ jac <- function(dat, loc = 0, scale, shape, lambdau = 1, censored) {
       stop("\"dat\" must be a matrix")
     }
     N <- nrow(dat)
+    D <- ncol(dat)
     if (!all(dim(dat) == dim(censored))) {
       stop("Invalid input in Jacobian contribution.")
     }
-    loc <- rep(loc, length.out = ncol(dat))
-    scale <- rep(scale, length.out = ncol(dat))
-    shape <- rep(shape, length.out = ncol(dat))
-    lambdau <- rep(lambdau, length.out = ncol(dat))
+    loc <- rep(loc, length.out = D)
+    scale <- rep(scale, length.out = D)
+    shape <- rep(shape, length.out = D)
+    lambdau <- rep(lambdau, length.out = D)
     ll <- 0
-    for (j in 1:ncol(dat)) {
+    for (j in seq_len(D)) {
       ll <- ll - (N - sum(censored[, j])) * (log(scale[j]) + log(lambdau[j])) + (1 / shape[j] - 1) * sum(log(1 + shape[j] / scale[j] * pmax(0, dat[!censored[, j], j] - loc[j])))
     }
     return(ll)
@@ -99,6 +101,7 @@ jac <- function(dat, loc = 0, scale, shape, lambdau = 1, censored) {
 #' @export
 gpdtopar <- function(dat, loc = 0, scale, shape, lambdau = 1) {
   if (is.vector(dat)) {
+   stopifnot(length(loc) == 1L, length(scale) == 1L, length(shape) == 1L, length(lambdau) == 1L)
     return((1 + shape / scale * pmax(dat - loc, 0))^(1 / shape) / lambdau)
   } else {
     loc <- rep(loc, length.out = ncol(dat))
@@ -115,9 +118,9 @@ gpdtopar <- function(dat, loc = 0, scale, shape, lambdau = 1) {
 }
 
 
-#' Likelihood for multivariate generalized Pareto distribution
+#' Likelihood for multivariate peaks over threshold models
 #'
-#' Likelihood for the Brown--Resnick, extremal Student or logistic vectors over region determined by
+#' Likelihood for the various parametric limiting models over region determined by
 #' \deqn{\{y \in F: \max_{j=1}^D \sigma_j \frac{y^\xi_j-1}{\xi_j}+\mu_j  > u\};}
 #' where \eqn{\mu} is \code{loc}, \eqn{\sigma} is \code{scale} and \eqn{\xi} is \code{shape}.
 #' @param dat matrix of observations
@@ -129,7 +132,7 @@ gpdtopar <- function(dat, loc = 0, scale, shape, lambdau = 1) {
 #' @param likt string indicating the type of likelihood, with an additional contribution for the non-exceeding components: one of  \code{"mgp"}, \code{"binom"} and \code{"pois"}.
 #' @param ... additional arguments (see Details)
 #' @param par list of parameters: \code{alpha} for the logistic model, \code{Lambda} for the Brown--Resnick model or else \code{Sigma} and \code{df} for the extremal Student.
-#' @param model string indicating the model family, one of \code{"log"}, \code{"br"} or \code{"xstud"}
+#' @param model string indicating the model family, one of \code{"log"}, \code{"neglog"}, \code{"br"} or \code{"xstud"}
 #' @note The location and scale parameters are not identifiable unless one of them is fixed.
 #' @details
 #' Optional arguments can be passed to the function via \code{...}
@@ -142,9 +145,19 @@ gpdtopar <- function(dat, loc = 0, scale, shape, lambdau = 1) {
 #' }
 #' @return the value of the log-likelihood with \code{attributes} \code{expme}, giving the exponent measure
 #' @export
-likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud", "log"),
-                   likt = c("mgp", "pois", "binom"), lambdau = 1, ...) {
+likmgp <- function(dat,
+                   thresh,
+                   loc,
+                   scale,
+                   shape,
+                   par,
+                   model = c("log", "br", "xstud"),
+                   likt = c("mgp", "pois", "binom"),
+                   lambdau = 1,
+                   ...) {
   # Rename arguments
+  stopifnot(length(thresh) == 1L,
+            is.numeric(thresh))
   tdat <- dat
   N <- nrow(dat)
   D <- ncol(dat)
@@ -178,6 +191,15 @@ likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud",
     if (alpha < 0) {
       stop("Invalid \"par\" for \"log\" model.")
     }
+  }  else if (model == "neglog") {
+    alpha <- par$alpha
+    if (is.null(alpha)) {
+      stop("Invalid \"par\"")
+    }
+    alpha <- alpha[1]
+    if (alpha < 0) {
+      alpha <- -alpha
+    }
   }
   stopifnot(is.matrix(tdat), ncol(tdat) > 1)
   ellips <- list(...)
@@ -208,7 +230,7 @@ likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud",
   # Compute marginal transformation and Jacobian
   tu <- rep(0, D)
   jac <- -N * sum((log(A) + log(lambdau)))
-  for (j in 1:D) {
+  for (j in seq_len(D)) {
     if (abs(xi[j]) > 1e-5) {
       tdat[, j] <- pmax(0, (1 + xi[j] * (dat[, j] - B[j]) / A[j]))
       jac <- jac + (1 / xi[j] - 1) * sum(log(tdat[, j]))
@@ -224,7 +246,7 @@ likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud",
       tu[j] <- exp((thresh - B[j]) / A[j]) / lambdau[j]
     }
   }
-  if(model %in% c("br","xstud")){
+  if(model %in% c("br", "xstud")){
   if (!requireNamespace("mvPot", quietly = TRUE)) {
     stop(
       "Package \"mvPot\" must be installed to use this function.",
@@ -271,6 +293,26 @@ likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud",
     }
     intens <- ldVfunlog(x = tdat, alpha = alpha, lV = lVx)
     exponentMeasure <- exp(lVu)
+  } else if(model == "neglog"){
+    lVfun_neglog <- function(x, alpha){
+      stopifnot(is.vector(x))
+      xa <- x^alpha
+      p <- length(x)
+      Vx <- 0
+      for(i in seq_len(p)){
+          Vx <- Vx + ifelse(i%%2 == 0, 1, -1)*sum(combn(xa, m = i, FUN = sum)^(-1/alpha))
+      }
+      return(log(Vx))
+    }
+    lVu <- lVfun_neglog(x = tu, alpha = alpha)
+    exponentMeasure <- exp(lVu)
+    ldVfun_neglog <- function(x, alpha) {
+      x <- as.matrix(x^alpha)
+      p <- ncol(x)
+      prod(dim(x))*log(alpha) + nrow(x)*(lgamma(1/alpha + 1) - lgamma(1/alpha + p - 1)) +
+        (1 - 1/alpha)*log(sum(x)) - (1/alpha + p)*sum(log(rowSums(x)))
+    }
+    intens <- ldVfun_neglog(x = tdat, alpha = alpha)
   }
   res <- intens + jac + switch(likt,
     mgp = -N * log(exponentMeasure),
@@ -281,9 +323,11 @@ likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud",
   res
 }
 
-#' Censored likelihood for multivariate generalized Pareto distributions
+#' Censored likelihood for multivariate peaks over threshold models
 #'
-#' Censored likelihood for the logistic distribution and the Brown--Resnick and extremal Student processes.
+#' Censored likelihoods for various parametric limiting models over region determined by
+#' \deqn{\{y \in F: \max_{j=1}^D \sigma_j \frac{y^\xi_j-1}{\xi_j}+\mu_j  > u\};}
+#' where \eqn{\mu} is \code{loc}, \eqn{\sigma} is \code{scale} and \eqn{\xi} is \code{shape}.
 #'
 #' @inheritParams likmgp
 #' @param mthresh vector of individuals thresholds under which observations are censored
@@ -305,8 +349,20 @@ likmgp <- function(dat, thresh, loc, scale, shape, par, model = c("br", "xstud",
 #' }
 #' @return the value of the log-likelihood with \code{attributes} \code{expme}, giving the exponent measure
 #' @export
-clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model = c("br", "xstud", "log"),
-                    likt = c("mgp", "pois", "binom"), lambdau = 1, ...) {
+#' @keywords internal
+clikmgp <- function(dat,
+                    thresh,
+                    mthresh = thresh,
+                    loc,
+                    scale,
+                    shape,
+                    par,
+                    model = c("log", "br", "xstud"),
+                    likt = c("mgp", "pois", "binom"),
+                    lambdau = 1,
+                    ...) {
+  stopifnot(length(thresh) == 1L,
+            is.numeric(thresh))
 
   # Rename arguments
   tdat <- dat
@@ -342,6 +398,15 @@ clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model
     if (alpha < 0) {
       stop("Invalid \"par\" for \"log\" model.")
     }
+  }  else if (model == "neglog") {
+    alpha <- par$alpha
+    if (is.null(alpha)) {
+      stop("Invalid \"par\"")
+    }
+    alpha <- alpha[1]
+    if (alpha < 0) {
+      alpha <- -alpha
+    }
   }
   stopifnot(is.matrix(tdat), ncol(tdat) > 1)
   if (length(mthresh) < ncol(tdat)) {
@@ -376,7 +441,7 @@ clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model
   censored <- ellips$censored
   if (is.null(censored)) {
     censored <- matrix(FALSE, nrow = nrow(tdat), ncol = ncol(tdat))
-    for (j in 1:ncol(tdat)) {
+    for (j in seq_len(D)) {
       censored[, j] <- tdat[, j] < mthresh[j]
     }
   }
@@ -401,11 +466,12 @@ clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model
   # if(isTRUE(any(ifelse(shape >= 0, margmthresh < (B - shape / A), mmax > (B - shape/A))))){
   #  return(-Inf)
   # }
+
   # Compute marginal transformation and Jacobian
   tu <- rep(0, D)
   yth <- rep(0, D)
   jac <- -sum(numAbovePerCol * (log(A) + log(lambdau)))
-  for (j in 1:D) {
+  for (j in seq_len(D)) {
     if (abs(xi[j]) > 1e-5) {
       if (model == "br") {
         tdat[, j] <- log(pmax(0, 1 + xi[j] * (dat[, j] - B[j]) / A[j]))
@@ -432,22 +498,8 @@ clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model
       tu[j] <- exp((thresh - B[j]) / A[j]) / lambdau[j]
     }
   }
-  # test <- mvPot::censoredLikelihoodBR(obs = split(exp(tdat), row(exp(tdat))), loc = sites, vario = varioloc, thresh = tu, p = B1, vec = genvec1)
-  # return(-test + jac)
-  #
-  # par(mfrow = c(1,1))
-  #  wexc <- which(apply(t(t(rain[,stid]) - us), 1, max) > thresh)
-  #  plot(log(1/(1-(rank(as.vector(rain[,stid[j]]))/(ellips$ntot+1))))[wexc], tdat[,j], xlab = "theoretical",ylab = "empirical", main = shape[1]);
-  #  abline(0,1)
-  #  # b <- spunif(x = as.vector(rain[,stid[j]]),mthresh = us[j], scale = scale[j], shape = shape[j])
-  #  # plot(log(1/(1-b[wexc])), tdat[,j]); abline(0,1)
-  # abline(h = log(yth[j]))
-  # Use empirical transformation
-  # jac <- 0
-  # for(j in 1:D){
-  #   tdat[,j] <- log(1/(1-(rank(as.vector(rain[,stid[j]]))/(ellips$ntot+1))))[wexc]
-  # }
-  if (model != "log") {
+  # Dependence structure
+  if (model %in% c("br","xstud")) {
     likelihood_xstud <- function(i) {
       if (i < N + 1) {
         k <- numAbovePerRow[i]
@@ -533,7 +585,8 @@ clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model
     }
     exponentMeasure <- sum(unlist(pro)[(1 + N):(D + N)] / tu)
     intens <- sum(unlist(pro)[1:N])
-  } else { # Model is logistic
+  } else if(model == "log") { # Logistic (Gumbel) multivariate model
+    #tdat <- tdat[,numAbovePerRow>0]
     lVfunlog <- function(x, alpha) {
       if (is.null(dim(x))) {
         alpha * log(sum(x^(-1 / alpha)))
@@ -553,11 +606,94 @@ clikmgp <- function(dat, thresh, mthresh = thresh, loc, scale, shape, par, model
       falf <- c(log(alpha), sapply(2:D, function(s) {
         lfalfacto1(alpha, s)
       }))
-      sum(-numAbovePerRow * log(alpha) + falf[numAbovePerRow]) -
+      -sum(numAbovePerRow) * log(alpha) + sum(falf[numAbovePerRow]) -
         (1 / alpha + 1) * sum(log(x[!censored])) + sum((alpha - numAbovePerRow) * lV) / alpha
     }
     intens <- ldVfunlog(x = cdat, censored = censored, alpha = alpha, numAbovePerRow = numAbovePerRow, lV = lVx)
     exponentMeasure <- exp(lVu)
+  } else if(model == "neglog"){
+    cdat <- t(apply(tdat, 1, function(x) {
+      exp(alpha*log(pmax(yth, x)))
+    }))
+    # Parametrization that follows is in mev vignette with alpha > 0
+    lVfunneglog <- function(x, alpha){
+      xa <- exp(alpha*log(x))
+      if (is.null(dim(x))) { # vector
+        p <- length(x)
+        Vx <- 0
+        for(i in seq_len(p)){
+          Vx <- Vx + ifelse(i%%2 == 0, -1, 1)*sum(combn(xa, m = i, FUN = sum)^(-1/alpha))
+        }
+      } else { # matrix
+        p <- ncol(xa)
+        Vx <- rep(0, nrow(xa))
+        for(i in seq_len(p)){
+          Vx <- Vx + ifelse(i%%2 == 0, -1, 1)*
+            rowSums(apply(
+              combn(seq_len(p), i), 2, function(ind){
+                rowSums(xa[,ind, drop = FALSE])^(1/alpha)}))
+        }
+      }
+      return(log(Vx))
+    }
+    lVu <- lVfunneglog(x = tu, alpha = alpha)
+    exponentMeasure <- exp(lVu)
+    # x vector of observations to the power alpha
+    # censored matrix of logical indicator, TRUE for censored, FALSE otherwise
+    # alpha positive shape parameter
+    # numAbovePerRow vector of the row sums of \code{censored}.
+    ldVfunneglog <- function(x, censored, alpha, numAbovePerRow) {
+      lssum <- function(x, pow = 1){
+        bi <- log(abs(x))
+        # This is from Lemma 5.1(2) of Hofert, Maechler and McNeil
+        # First, we break all terms individually (no summing)
+        # then, we use min instead of max (because pow will be negative, so min^pow is the max)
+        # then, we use pow
+        if(pow < 0){
+          pow*min(bi) + log(sum(sign(xt)*exp(pow*(bi - min(bi)))))
+        } else{
+          pow*max(bi) + log(sum(sign(x)*exp(pow*(bi - max(bi)))))
+        }
+      }
+      x <- as.matrix(x)
+      p <- ncol(x)
+      res <- sum(numAbovePerRow)*log(alpha) + nrow(x)*lgamma(1/alpha + 1) - sum(lgamma(1/alpha + numAbovePerRow - 1)) +
+        (1 - 1/alpha)*log(sum(x[!censored]))
+      # sapply(1:nrow(x), function(i){
+      if(numAbovePerRow[i] == p){return(0)}
+      sumAbove <- sum(x[i,-censored[i,]])
+      xt <- c(sumAbove,
+              unlist(sapply(seq_len(p - numAbovePerRow[i]),
+                            function(j){
+                              rep(x = ifelse((j - numAbovePerRow[i])%%2 == 0, 1, -1),
+                                  length.out = choose(n = p - numAbovePerRow[i], j))*(
+                                    combn(x[i,censored[i,]], j, FUN = sum) + sumAbove)
+                            })))
+       for(i in seq_len(nrow(x))){
+        # sum of uncensored
+        if(numAbovePerRow[i] < p){
+          sumAbove <- sum(x[i,-censored[i,]])
+          xt <- c(sumAbove,
+                  unlist(sapply(seq_len(p - numAbovePerRow[i]),
+                         function(j){
+                           rep(x = ifelse((j - numAbovePerRow[i])%%2 == 0, 1, -1),
+                               length.out = choose(n = p - numAbovePerRow[i], j))*(
+                             combn(x[i,censored[i,]], j, FUN = sum) + sumAbove)
+                           })))
+          res <- res + lssum(xt, (-1/alpha - numAbovePerRow[i]))
+        }
+        # res <- res + ifelse(numAbovePerRow[i] == p, 0, log(pmax(0, #TODO fix potential numerical overflow
+        #   sum(x[i,-censored[i,]]) + # empty set
+        #     sum(sapply(seq_len(p - numAbovePerRow[i]),
+        #          function(j){
+        #            ifelse((j - numAbovePerRow[i])%%2 == 0, 1, -1)*sum(
+        #              (combn(x[i,censored[i,]], j,
+        #                  FUN = sum) + sum(x[i,-censored[i,]])))})))))
+      }
+      return(res)
+    }
+
+    intens <- ldVfunneglog(x = cdat, censored = censored, alpha = alpha, numAbovePerRow = numAbovePerRow)
   }
   res <- jac + intens + switch(likt,
     mgp = -N * log(exponentMeasure),
