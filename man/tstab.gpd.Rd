@@ -10,6 +10,8 @@ tstab.gpd(
   method = c("wald", "profile", "post"),
   level = 0.95,
   plot = TRUE,
+  which = c("scale", "shape"),
+  changepar = TRUE,
   ...
 )
 }
@@ -24,6 +26,10 @@ Must be one of \code{"wald"}, \code{"profile"} or \code{"post"}.}
 \item{level}{confidence level of the intervals. Default to 0.95.}
 
 \item{plot}{logical; should parameter stability plots be displayed? Default to \code{TRUE}.}
+
+\item{which}{character vector with elements \code{scale} or \code{shape}}
+
+\item{changepar}{logical; if \code{TRUE}, changes the graphical parameters.}
 
 \item{...}{additional arguments passed to \code{plot}.}
 }
@@ -51,7 +57,8 @@ The latter two methods better reflect the asymmetry of the estimates than the Wa
 \examples{
 dat <- abs(rnorm(10000))
 u <- qnorm(seq(0.9,0.99, by= 0.01))
-tstab.gpd(xdat = dat, thresh = u)
+par(mfrow = c(1,2))
+tstab.gpd(xdat = dat, thresh = u, changepar = FALSE)
 \dontrun{
 tstab.gpd(xdat = dat, thresh = u, method = "profile")
 tstab.gpd(xdat = dat, thresh = u, method = "post")

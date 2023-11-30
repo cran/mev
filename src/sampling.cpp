@@ -234,7 +234,7 @@ arma::vec dmvnorm_chol_arma(arma::mat x,  arma::rowvec mean,  arma::mat chol_sig
 //' \eqn{P_{x}} is probability of extremal function scaled by a Frechet variate
 //'
 //' @param d dimension of the 1-sample
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param theta a one-dimensional parameter for the logistic model, strictly greater than 1.
 //'
 //' @keywords internal
@@ -260,7 +260,7 @@ NumericVector rPlog (int d, int index, NumericVector theta){
 //' \eqn{P_{x}} is probability of extremal function scaled by a Frechet variate
 //'
 //' @param d dimension of the 1-sample
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param theta a one-dimensional parameter for the negative logistic model
 //'
 //' @keywords internal
@@ -281,7 +281,7 @@ NumericVector rPneglog (int d, int index, NumericVector theta){
 //' \eqn{P_{x}} is the probability of extremal functions from a Dirichlet mixture
 //'
 //' @param d dimension of the 1-sample
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param alpha a \eqn{d \times n} dimensional vector of positive parameter values for the Dirichlet vector
 //' @param weight a \code{m} vector of mixture weights, which sum to 1
 //' @return a \code{d}-vector from \eqn{P_x}
@@ -312,7 +312,7 @@ NumericVector rPdirmix (int d, int index, NumericMatrix alpha, NumericVector wei
 //' \eqn{P_{x}} is the probability of extremal functions
 //'
 //' @param d dimension of the 1-sample
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param alpha a \eqn{d} dimensional vector of positive parameter values for the Dirichlet vector
 //' @return a \code{d}-vector from \eqn{P_x}
 //' @keywords internal
@@ -358,8 +358,8 @@ NumericVector rPexstud_old (int index, arma::mat sigma, NumericVector al){
 //' Generate from extremal Student-t \eqn{Y \sim {P_x}}, where
 //' \eqn{P_{x}} is probability of extremal function
 //'
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
-//' @param Sigma a positive semi-definite correlation matrix
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
+//' @param sigma a positive semi-definite correlation matrix
 //' @param cholesky Cholesky root of transformed correlation matrix
 //' @param al the alpha parameter in Proposition 7. Corresponds to degrees of freedom - 1
 //' @keywords internal
@@ -390,7 +390,7 @@ NumericVector rPexstud (int index, arma::mat cholesky, arma::mat sigma, NumericV
 //' Generate from extremal Husler-Reiss distribution \eqn{Y \sim {P_x}}, where
 //' \eqn{P_{x}} is probability of extremal function
 //'
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param Sigma a covariance matrix formed from the symmetric square matrix of coefficients \eqn{\lambda^2}
 //' @param cholesky the Cholesky root of \code{Sigma}
 //' @return a \code{d}-vector from \eqn{P_x}
@@ -441,7 +441,7 @@ NumericVector rPHuslerReiss_old (int index, arma::mat Lambda){
 //' Generate from Brown-Resnick process \eqn{Y \sim {P_x}}, where
 //' \eqn{P_{x}} is probability of extremal function
 //'
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param Sigma a positive definite covariance matrix
 //' @keywords internal
 //' @return a \code{d}-vector from \eqn{P_x}
@@ -492,7 +492,7 @@ NumericVector rPSmith_old (int index, arma::mat Sigma, arma::mat loc){
 //' Generate from Smith model (moving maxima) \eqn{Y \sim {P_x}}, where
 //' \eqn{P_{x}} is probability of extremal function
 //'
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param Sigma_chol the Cholesky root of the covariance matrix
 //' @param loc location matrix
 //' @keywords internal
@@ -524,7 +524,7 @@ NumericVector rPSmith (int index, arma::mat Sigma_chol, arma::mat loc){
 //' Note: we generate from the Dirichlet rather than the Gamma distribution, since the former is parallelized
 //'
 //' @param d dimension of the 1-sample
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
+//' @param index index of the location. An integer in 0, ..., \eqn{d-1}
 //' @param alpha a \eqn{d} dimensional vector of positive parameter values for the Dirichlet vector, or
 //' \eqn{d+1} if the last entry is the index of regular variation of the model, a constant in \code{(0, 1]}
 //' @param irv should the usual model (\code{FALSE}) or the general scaled version (\code{TRUE}) be used
@@ -576,7 +576,7 @@ NumericVector rPdir(int d, int index, NumericVector alpha, bool irv = false){
 //' @return an \code{n} by \code{d} sample from the spectral distribution
 //[[Rcpp::export(.rlogspec)]]
 NumericMatrix rlogspec (int n, int d, NumericVector theta){
-  double shape = theta[0];
+  double beta = theta[0];
   // double scale = 1/tgamma(1.0-1.0/theta[0]);
   //Define containers
   NumericMatrix samp(n,d);
@@ -584,8 +584,8 @@ NumericMatrix rlogspec (int n, int d, NumericVector theta){
   int j;
   for(int r=0; r<n; r++){
     j = sampleone(d);
-    F0[0] = exp(-log(rgamma(1,1.0-1.0/theta[0],1.0)[0])/theta[0]);
-    samp(r,_) = exp(-log(Rcpp::rexp(d,1.0))/shape)/F0[0];
+    F0[0] = exp(-log(rgamma(1,1.0-1.0/beta,1.0)[0])/beta);
+    samp(r,_) = exp(-log(Rcpp::rexp(d,1.0))/beta)/F0[0];
     samp(r,j) = 1.0;
     samp(r,_) = samp(r,_)/sum(samp(r,_));
   }
@@ -693,8 +693,7 @@ NumericMatrix rbilogspec(int n, NumericVector alpha){
 
 //' Generates from \eqn{Q_i}{Qi}, the spectral measure of the extremal Student model
 //'
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
-//' @param Sigma a positive semi-definite covariance matrix with unit variance
+//' @param sigma a positive semi-definite covariance matrix with unit variance
 //' @param al the alpha parameter in Proposition 7. Corresponds to degrees of freedom - 1
 //' @keywords internal
 //' @return an \code{n} by \code{d} sample from the spectral distribution
@@ -721,7 +720,6 @@ NumericMatrix rexstudspec(int n, arma::mat sigma, NumericVector al){
 
 //' Generates from \eqn{Q_i}{Qi}, the spectral measure of the Husler-Reiss model
 //'
-//' @param index index of the location. An integer in {0, ..., \eqn{d-1}}
 //' @param Lambda an symmetric square matrix of coefficients \eqn{\lambda^2}
 //' @keywords internal
 //' @return an \code{n} by \code{d} sample from the spectral distribution
@@ -842,7 +840,6 @@ NumericMatrix rsmithspec(int n, arma::mat Sigma_chol, arma::mat loc){
 //' @param n sample size
 //' @param d dimension of sample
 //' @param alpha vector of Dirichlet parameters of dimension \code{d}, or \eqn{d+1} vector with the \code{d} Dirichlet parameters and an index of regular variation in \eqn{[0, 1]}
-//' @param rho index of regular variation
 //' @param irv should the usual model (\code{FALSE}) or the general scaled version (\code{TRUE}) be used
 //' @keywords internal
 //' @references Boldi (2009). A note on the representation of parametric models
@@ -1191,7 +1188,7 @@ void check_args(int d, NumericVector param, int model, NumericMatrix Sigma, arma
 //'
 //' @param n sample size
 //' @param d dimension of the multivariate distribution
-//' @param param a vector of parameters
+//' @param par a vector of parameters
 //' @param model integer, currently ranging from 1 to 9, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
 //' (5) \code{extstud}, (6) \code{br}, (7) \code{ct} and \code{sdir}, (8) \code{smith} and (9) \code{hr}.
@@ -1201,12 +1198,12 @@ void check_args(int d, NumericVector param, int model, NumericMatrix Sigma, arma
 //' @keywords internal
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevA1)]]
-NumericMatrix rmevA1(int n, int d, NumericVector para, int model, NumericMatrix Sigma,
+NumericMatrix rmevA1(int n, int d, NumericVector par, int model, NumericMatrix Sigma,
                      arma::mat loc) {
   // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
   arma::mat cholesky(Sigma.nrow(), Sigma.ncol());
-  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(para);
+  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(par);
 	bool irv = false;
 	//Sanity checks
 	check_args(d, param, model, Sigma, loc);
@@ -1286,7 +1283,7 @@ NumericMatrix rmevA1(int n, int d, NumericVector para, int model, NumericMatrix 
 //'
 //' @param n sample size
 //' @param d dimension of the multivariate distribution
-//' @param param a vector of parameters
+//' @param par a vector of parameters
 //' @param model integer, currently ranging from 1 to 9, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
 //' (5) \code{extstud}, (6) \code{br}, (7) \code{ct} and \code{sdir}, (8) \code{smith} and (9) \code{hr}.
@@ -1295,13 +1292,13 @@ NumericMatrix rmevA1(int n, int d, NumericVector para, int model, NumericMatrix 
 //' @keywords internal
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevA2)]]
-NumericMatrix rmevA2(int n, int d, NumericVector para, int model, NumericMatrix Sigma,
+NumericMatrix rmevA2(int n, int d, NumericVector par, int model, NumericMatrix Sigma,
                      arma::mat loc) {
   // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
   arma::mat cholesky = arma::mat(Sigma.nrow(), Sigma.ncol()); //unitialized memory
   bool irv = false;
-  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(para);
+  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(par);
   //Sanity checks
   check_args(d, param, model, Sigma, loc);
   if(model == 5){
@@ -1425,7 +1422,7 @@ NumericMatrix rmevA2(int n, int d, NumericVector para, int model, NumericMatrix 
 //'
 //' @param n sample size
 //' @param d dimension of the multivariate distribution
-//' @param param a vector of parameters
+//' @param par a vector of parameters
 //' @param model integer, currently ranging from 1 to 9, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
 //' (5) \code{extstud}, (6) \code{br}, (7) \code{ct} and \code{sdir}, (8) \code{smith} and (9) \code{hr}.
@@ -1439,13 +1436,13 @@ NumericMatrix rmevA2(int n, int d, NumericVector para, int model, NumericMatrix 
 //' @keywords internal
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevspec_cpp)]]
-NumericMatrix rmevspec_cpp(int n, int d, NumericVector para, int model, NumericMatrix Sigma,
+NumericMatrix rmevspec_cpp(int n, int d, NumericVector par, int model, NumericMatrix Sigma,
                            arma::mat loc) {
   // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
   arma::mat cholesky(Sigma.nrow(), Sigma.ncol());
   bool irv = false;
-  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(para);
+  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(par);
   //Sanity checks
   check_args(d, param, model, Sigma, loc);
   if(model == 5){
@@ -1509,7 +1506,7 @@ NumericMatrix rmevspec_cpp(int n, int d, NumericVector para, int model, NumericM
 //'
 //' @param n sample size
 //' @param d dimension of the multivariate distribution
-//' @param param a vector of parameters
+//' @param par a vector of parameters
 //' @param asym matrix of bool indicating which component belong to the corresponding row logistic model
 //' @param ncompo number of components for the (negative) logistic in row
 //' @param Sigma matrix of asymmetry parameters
@@ -1521,46 +1518,60 @@ NumericMatrix rmevspec_cpp(int n, int d, NumericVector para, int model, NumericM
 //' @keywords internal
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rmevasy)]]
-NumericMatrix rmevasy(int n, int d, NumericVector para, LogicalMatrix asym,
+NumericMatrix rmevasy(int n, int d, NumericVector par, LogicalMatrix asym,
                        IntegerVector ncompo, NumericMatrix Sigma, int model) {
-  if(!(model == 1 || model == 2)){
+  if(!(model == 1 || model == 2 || model == 14)){
     Rcpp::stop("Asymmetric model not implemented");
     }
   NumericMatrix samp(n,d);
-  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(para);
+  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(par);
   IntegerVector siz = IntegerVector::create(d, Sigma.nrow());
-  //IntegerVector index = seq_len(d)-1; // can subset using index[asym(r,_)]
   NumericMatrix nullmat(0,0);
   arma::mat void_mat(0,0);
   int j=0;
-  //Generate point masses on the edges, if any
-  for(int i=0; i < d; i++){
-    if(param[i] != 0){
-     samp(_, j) = Sigma(j, j)/Rcpp::rexp(n,1.0);
-      j++;
+  if(model == 14){
+    NumericVector factors(n);
+    // Max-linear: only generate a single Frechet
+    for(int r = 0; r < Sigma.nrow(); r++){
+      factors = Rcpp::rexp(n, 1.0);
+      j=0;
+      for(int i=0; i < d; i++){
+        if(asym(r,i) == true){
+          samp(_, i) = pmax(samp(_, i), Sigma(r,i)/factors);
+          j++;
+        }
+      }
     }
+    return samp;
+  } else{
+    //Generate point masses on the edges, if any
+    for(int i=0; i < d; i++){
+      if(param[i] != 0){
+        samp(_, j) = Sigma(j, j)/Rcpp::rexp(n,1.0);
+        j++;
+      }
+    }
+    for(int r = min(siz); r < Sigma.nrow(); r++){
+      NumericMatrix intersamp = rmevA2(n, ncompo(r), NumericVector::create(param[r]), model, nullmat, void_mat);
+      j=0;
+      for(int i=0; i < d; i++){
+        if(asym(r,i) == true){
+          samp(_, i) = pmax(samp(_, i), Sigma(r,i)*intersamp(_, j));
+          j++;
+        }
+      }
+    }
+    return samp;
   }
-
-for(int r = min(siz); r < Sigma.nrow(); r++){
-  NumericMatrix intersamp = rmevA2(n, ncompo(r), NumericVector::create(param[r]), model, nullmat, void_mat);
-  j=0;
-  for(int i=0; i < d; i++){
-    if(asym(r,i) == true){
-    samp(_, i) = pmax(samp(_, i), Sigma(r,i)*intersamp(_, j));
-    j++;
-  }
-}
-}
-return samp;
 }
 
 //' Samples from exceedances at site (scaled extremal function definition)
 //'
 //'
 //' @param n sample size
-//' @param index index of the site or variable
+//' @param j index of the site or variable
 //' @param d dimension of the multivariate distribution
-//' @param param a vector of parameters
+//' @param par a vector of parameters
 //' @param model integer, currently ranging from 1 to 9, corresponding respectively to
 //' (1) \code{log}, (2) \code{neglog}, (3) \code{dirmix}, (4) \code{bilog},
 //' (5) \code{extstud}, (6) \code{br}, (7) \code{ct} and \code{sdir}, (8) \code{smith} and (9) \code{hr}.
@@ -1569,14 +1580,14 @@ return samp;
 //' @keywords internal
 //' @return a \code{n} by \code{d} matrix containing the sample
 // [[Rcpp::export(.rPsite)]]
-NumericMatrix rPsite(int n, int j, int d, NumericVector para, int model, NumericMatrix Sigma, arma::mat loc) {
+NumericMatrix rPsite(int n, int j, int d, NumericVector par, int model, NumericMatrix Sigma, arma::mat loc) {
   // Transform parameters to different format
   arma::mat sigma(Sigma.begin(), Sigma.nrow(), Sigma.ncol(), false);
   arma::mat cholesky = arma::mat(Sigma.nrow(), Sigma.ncol()); //unitialized memory
   bool irv = false;
   //Increment j to convert from R convention to C (zero indexing)
   j--;
-  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(para);
+  NumericVector param = Rcpp::clone<Rcpp::NumericVector>(par);
   //Sanity checks
   check_args(d, param, model, Sigma, loc);
   if(model == 5){

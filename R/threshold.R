@@ -14,6 +14,8 @@
 #' Must be one of \code{"wald"}, \code{"profile"} or \code{"post"}.
 #' @param level confidence level of the intervals. Default to 0.95.
 #' @param plot logical; should parameter stability plots be displayed? Default to \code{TRUE}.
+#' @param which character vector with elements \code{scale} or \code{shape}
+#' @param changepar logical; if \code{TRUE}, changes the graphical parameters.
 #' @param ... additional arguments passed to \code{plot}.
 #' @return a list with components
 #' \itemize{
@@ -31,7 +33,8 @@
 #' @examples
 #' dat <- abs(rnorm(10000))
 #' u <- qnorm(seq(0.9,0.99, by= 0.01))
-#' tstab.gpd(xdat = dat, thresh = u)
+#' par(mfrow = c(1,2))
+#' tstab.gpd(xdat = dat, thresh = u, changepar = FALSE)
 #' \dontrun{
 #' tstab.gpd(xdat = dat, thresh = u, method = "profile")
 #' tstab.gpd(xdat = dat, thresh = u, method = "post")
@@ -41,9 +44,15 @@ tstab.gpd <- function(xdat,
                       method = c("wald", "profile", "post"),
                       level = 0.95,
                       plot = TRUE,
+                      which = c("scale", "shape"),
+                      changepar = TRUE,
                       ...
 ){
   args <- list(...)
+  if(isTRUE(all(which %in% 1:2))){
+    which <- c("scale","shape")[which]
+  }
+  which <- match.arg(which, choices = c("scale", "shape"), several.ok = TRUE)
   if(missing(xdat) && !is.null(args$dat)){
     dat <- args$dat
     args$dat <- NULL
@@ -102,6 +111,7 @@ tstab.gpd <- function(xdat,
     confintmat[i,1] <- parmat[i,1] - stderr.transfo * qnorm(1-alpha/2)
     confintmat[i,2] <- parmat[i,1] + stderr.transfo * qnorm(1-alpha/2)
    } else if(method == "profile"){
+     if("shape" %in% which){
      if(gpdu$estimate['shape'] == -1){
        # Specify grid of psi values (only one-sided)
        profxi <- gpd.pll(psi = seq(-1, 0, by = 0.01),
@@ -121,22 +131,27 @@ tstab.gpd <- function(xdat,
 
      confintmat[i,3:4] <- confint(profxi, level = level, print = FALSE)[2:3]
      }
+     }
+     if(gpdu$estimate['shape'] > -1){
+       if("scale" %in% which){
      k <- 30L
-     prof_vals <- rep(0, k)
-     xi_sigma_vals <- rep(0, k)
+     prof_vals <- rep(NA_real_, k)
+     xi_sigma_vals <- rep(NA_real_, k)
      if(!is.na(stderr.transfo)){
-     grid_psi <- parmat[i,1] + seq( - 3 * stderr.transfo, 3.5 * stderr.transfo, length = k)
-   } else{
-     grid_psi <- seq( - 3 *parmat[i,1]/sqrt(gpdu$nat), 3.5 * parmat[i,1]/sqrt(gpdu$nat), length = k)
-   }
-     xmaxui <- xmax - thresh[i]
+      grid_psi <- parmat[i,1] + seq( - 3 * stderr.transfo, 3.5 * stderr.transfo, length = k)
+     } else{
+      grid_psi <- seq(- 3 *parmat[i,1]/sqrt(gpdu$nat), 3.5 * parmat[i,1]/sqrt(gpdu$nat), length = k)
+     }
      #Profile for scale := sigma_u - xi (u - u_0)
       for(j in seq_len(k)){
-        opt_prof <- optimize(f = pllsigmainv, upper = 1.5,
-                             lower = max(-grid_psi[j]/(thresh[i]-thresh[1]), -grid_psi[j]/(xmaxui+thresh[i]-thresh[1]))+1e-10,
-                             sigmat = grid_psi[j], dat = gpdu$exceedances, thresh = thresh[i]-thresh[1])
+        opt_prof <- try(optimize(f = pllsigmainv, upper = 1.5,
+                             lower = pmin(0, pmax(-1, -grid_psi[j]/(xmax-thresh[1]))+1e-10),
+                             sigmat = grid_psi[j], dat = gpdu$exceedances, thresh = thresh[i]-thresh[1]),
+                        silent = TRUE)
+        if(!inherits(opt_prof, "try-error")){
         xi_sigma_vals[j] <- opt_prof$minimum
         prof_vals[j] <- opt_prof$objective
+        }
       }
      prof <- structure(list(psi = grid_psi, psi.max = parmat[i,1], pll = -prof_vals,
                             maxpll = -gpdu$nllh, std.err = stderr.transfo), class = "eprof")
@@ -144,7 +159,9 @@ tstab.gpd <- function(xdat,
      if(!inherits(conf, "try-error")){
      confintmat[i, 1:2] <- conf
      }
-   } else if(method == "post"){
+       }
+     }
+     } else if(method == "post"){
       postsim <- #suppressWarnings(
         revdbayes::rpost_rcpp(n = 1000, thresh = 0,
                               model = "gp",
@@ -167,20 +184,26 @@ tstab.gpd <- function(xdat,
   ret <- structure(list(threshold = thresh, mle = parmat, lower = lower,
                                     upper = upper, method = method, level = level), class = "mev_tstab.gpd")
   if(plot){
-    plot(ret, ...)
+    plot(ret, which = (1:2)[c("scale","shape") %in% which], changepar = changepar, ...)
   }
   return(invisible(ret))
 }
 
 #'@export
-plot.mev_tstab.gpd <- function(x, which = 1:2, ...){
-  oldpar <- par(no.readonly = TRUE)
-  if(length(which) == 2){
-    par(mfrow = c(2,1), mar = c(4,4.5,3,1))
-  }
-  on.exit(par(oldpar))
+plot.mev_tstab.gpd <- function(x, which = 1:2, changepar = TRUE, ...){
   ellipsis <- list(...)
   names_ell <- names(ellipsis)
+    if(!is.logical(changepar)){
+      changepar <- FALSE
+    }
+    ellipsis$changepar <- NULL
+  if(!changepar){
+    oldpar <- par(no.readonly = TRUE)
+    if(length(which) == 2){
+      par(mfrow = c(1,2), mar = c(4,4.5,3,1))
+    }
+    on.exit(par(oldpar))
+  }
   if("main" %in% names_ell){
     main <- ellipsis$main
     ellipsis$main <- NULL
@@ -196,7 +219,7 @@ plot.mev_tstab.gpd <- function(x, which = 1:2, ...){
     sub <- ellipsis$sub
     ellipsis$sub <- NULL
   }
-  if(isTRUE(all.equal(which, 2, check.attributes = FALSE))){
+  if(length(which) == 2L){
     main[2] <- main[1]
     sub[2] <- sub[1]
   }
@@ -232,7 +255,7 @@ plot.mev_tstab.gpd <- function(x, which = 1:2, ...){
     ylim <- c(min(x$lower[,1]), max(x$upper[,1]))
     pars <- list(x = x$threshold, y =  x$mle[,1], pch = pch, ylab = ylab[1], xlab = xlab,
                  ylim = ylim, bty = bty, main = main[1])
-    do.call(plot, c(pars, ellipsis))
+    do.call(plot, pars)
     mtext(side = 3, line = -0.2, adj = 0.5, text = sub[1])
     for(i in 1:length(x$threshold)){
       lines(c(x$threshold[i], x$threshold[i]), c(x$lower[i,1], x$upper[i,1]))
@@ -243,7 +266,7 @@ plot.mev_tstab.gpd <- function(x, which = 1:2, ...){
   #shape
   pars <- list(x = x$threshold, y = x$mle[,2], pch = pch, ylab = ylab[2], xlab = xlab,
   ylim = ylim, bty = bty, main = main[2])
-  do.call(plot,  c(pars,ellipsis))
+  do.call(plot,  pars)
   mtext(side = 3, line = -0.2, adj = 0.5, text = sub[2])
   for(i in 1:length(x$threshold)){
     lines(c(x$threshold[i], x$threshold[i]), c(x$lower[i,2], x$upper[i,2]))

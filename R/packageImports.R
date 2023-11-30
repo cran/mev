@@ -4,7 +4,7 @@ NULL
 
 #' @importFrom Rcpp evalCpp
 #' @importFrom grDevices "colorRampPalette"
-#' @importFrom graphics "plot" "lines" "abline" "axis" "par" "matplot" "legend" "image" "mtext" "text" "rug"
+#' @importFrom graphics "lines" "abline" "axis" "par" "matplot" "legend" "image" "mtext" "text" "rug"
 NULL
 
 

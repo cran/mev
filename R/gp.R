@@ -146,7 +146,7 @@
 #' @param show logical; if \code{TRUE} (default), print details of the fit.
 #' @param method optimization method (see \code{\link{optim}} for details).
 #' @param maxit  maximum number of iterations.
-#' @param ...other control parameters for the optimization. These are passed to components of the \code{control} argument of \code{optim}.
+#' @param ... other control parameters for the optimization. These are passed to components of the \code{control} argument of \code{optim}.
 #'
 #' @details  For non-stationary fitting it is recommended that the covariates within the generalized linear models are (at least approximately) centered and scaled (i.e. the columns of \code{ydat} should be approximately centered and scaled).
 #'
@@ -914,6 +914,9 @@ gp.fit <- function(xdat, threshold, method = c("Grimshaw", "auglag", "nlm", "opt
     temp$mle <- temp$par
     temp$param <- c(temp$par, fixed_param)[wfo]
     temp$nllh <- temp$value
+    if(isTRUE(all.equal(temp$mle[2], -1, check.attributes = FALSE))){
+      temp$nllh <- -length(xdatu)*log(max(xdatu))
+    }
     temp$conv <- temp$convergence
     # Initialize standard errors and covariance matrix
     temp$vcov <- matrix(NA)
@@ -981,8 +984,8 @@ gp.fit <- function(xdat, threshold, method = c("Grimshaw", "auglag", "nlm", "opt
                              estimate = post.mean,
                              param = post.mean,
                              threshold = threshold,
-                             nat = sum(xdat > threshold),
-                             pat = sum(xdat > threshold)/length(xdat),
+                             nat = length(xdatu),
+                             pat = length(xdatu)/length(xdat),
                              approx.mean = temp$mle,
                              post.mean = post.mean,
                              post.se = post.se,
@@ -997,8 +1000,8 @@ gp.fit <- function(xdat, threshold, method = c("Grimshaw", "auglag", "nlm", "opt
                              estimate = temp$mle,
                              param = temp$mle,
                              threshold = threshold,
-                             nat = sum(xdat > threshold),
-                             pat = sum(xdat > threshold)/length(xdat),
+                             nat = length(xdatu),
+                             pat = length(xdatu)/length(xdat),
                              approx.mean = temp$mle,
                              exceedances = xdatu), class = c("mev_gpdbayes"))
 
@@ -1019,6 +1022,7 @@ gp.fit <- function(xdat, threshold, method = c("Grimshaw", "auglag", "nlm", "opt
   if(temp$mle[2] < -1){
     #Transform the solution (unbounded) to boundary - with maximum observation for scale and -1 for shape.
     temp$mle <- c(max(xdatu) + 1e-10, -1)
+    tmp$nllh <- -gpd.ll(par = temp$mle, dat = xdatu)
   }
 
   # Collecting observations from temp and formatting the output
@@ -1087,8 +1091,8 @@ gp.fit <- function(xdat, threshold, method = c("Grimshaw", "auglag", "nlm", "opt
 #' @return a list with the same components as \code{\link{fit.gpd}},
 #' in addition to
 #' \itemize{
-#' \item{\code{estimate}:}{optimal bias-robust estimates of the \code{scale} and \code{shape} parameters.}
-#' \item{\code{weights}:}{vector of OBRE weights.}
+#' \item \code{estimate}: optimal bias-robust estimates of the \code{scale} and \code{shape} parameters.
+#' \item \code{weights}: vector of OBRE weights.
 #' }
 #' @keywords internal
 #' @importFrom utils head

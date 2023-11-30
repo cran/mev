@@ -6,36 +6,62 @@
 #'
 #' @inheritParams rmev
 #' @param shape shape tail index of Pareto variable
-#' @param riskf string indicating risk functional.
+#' @param risk string indicating risk functional.
 #' @param siteindex integer between 1 and d specifying the index of the site or variable
 #' @return an \code{n} by \code{d} sample from the R-Pareto process, with \code{attributes}
 #' \code{accept.rate} if the procedure uses rejection sampling.
 #' @export
 #' @examples
-#' rparp(n=10, riskf='site', siteindex=2, d=3, param=2.5, model='log')
-#' rparp(n=10, riskf='min', d=3, param=2.5, model='neglog')
-#' rparp(n=10, riskf='max', d=4, param=c(0.2,0.1,0.9,0.5), model='bilog')
-#' rparp(n=10, riskf='sum', d=3, param=c(0.8,1.2,0.6, -0.5), model='sdir')
+#' rparp(n=10, risk = 'site', siteindex=2, d=3, param=2.5, model='log')
+#' rparp(n=10, risk = 'min', d=3, param=2.5, model='neglog')
+#' rparp(n=10, risk = 'max', d=4, param=c(0.2,0.1,0.9,0.5), model='bilog')
+#' rparp(n=10, risk = 'sum', d=3, param=c(0.8,1.2,0.6, -0.5), model='sdir')
 #' vario <- function(x, scale=0.5, alpha=0.8){ scale*x^alpha }
 #' grid.coord <- as.matrix(expand.grid(runif(4), runif(4)))
-#' rparp(n=10, riskf='max', vario=vario, coord=grid.coord, model='br')
-rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
-                  siteindex = NULL, d, param, sigma,
-                  model = c("log", "neglog", "bilog", "negbilog", "hr", "br", "xstud", "smith", "schlather", "ct", "sdir", "dirmix"),
-                  weights, vario, coord = NULL, ...) {
+#' rparp(n=10, risk = 'max', vario=vario, coord=grid.coord, model='br')
+rparp <- function(n,
+                  shape = 1,
+                  risk = c("sum", "site", "max", "min", "l2"),
+                  siteindex = NULL,
+                  d,
+                  param,
+                  sigma,
+                  model = c("log",
+                            "neglog",
+                            "bilog",
+                            "negbilog",
+                            "hr",
+                            "br",
+                            "xstud",
+                            "smith",
+                            "schlather",
+                            "ct",
+                            "sdir",
+                            "dirmix"),
+                  weights,
+                  vario,
+                  coord = NULL,
+                  ...) {
   ellips <- list(...)
+  if(!is.null(ellips$riskf)){
+    riskf <- ellips$riskf
+  } else{
+    riskf <- risk
+  }
   if(is.null(coord) && !is.null(ellips$loc)){
     coord <- ellips$loc
   }
   stopifnot(shape > 0)
-  riskf <- match.arg(riskf)
+  riskf <- match.arg(arg = riskf,
+                     choices = c("sum", "site", "max", "min", "l2"),
+                     several.ok = TRUE)[1]
   if (is.null(siteindex) && riskf == "site") {
     stop("For exceedances of site, the user needs to provide an index between 1 and d")
   }
   # Body of rmevspec
   models <- c("log", "neglog", "bilog", "negbilog", "hr", "br", "xstud", "smith", "schlather", "ct", "sdir", "dirmix", "negdir",
               "dir")
-  model <- match.arg(model, models)[1]
+  model <- match.arg(model, models, several.ok = TRUE)[1]
   if (model == "schlather") {
     if (!missing(param))
       warning("Parameter value (degrees of freedom) set to one for Schlather model")
@@ -199,12 +225,25 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
     coord <- cbind(0)
   }
   # Model
-  mod <- switch(model, log = 1, neglog = 2, dirmix = 3, bilog = 4, negbilog = 4, xstud = 5, br = 6, sdir = 7, smith = 8, hr = 9,
-                isbr = 9)
+  mod <-
+    switch(
+      model,
+      log = 1,
+      neglog = 2,
+      dirmix = 3,
+      bilog = 4,
+      negbilog = 4,
+      xstud = 5,
+      br = 6,
+      sdir = 7,
+      smith = 8,
+      hr = 9,
+      isbr = 9
+    )
   if (riskf == "sum") {
     # Generate from spectral measure
     return(mev::rgp(n = n, loc = 1, scale = 1, shape = shape) *
-             .rmevspec_cpp(n = n, d = d, para = param, model = mod, Sigma = sigma, loc = coord))
+             .rmevspec_cpp(n = n, d = d, par = param, model = mod, Sigma = sigma, loc = coord))
   } else if (riskf == "site") {
     # Check now that siteindex corresponds to a particular site
     # Dimension d could have been modified earlier for spatial models
@@ -213,7 +252,7 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
       stop("Invalid site index")
     }
     return(mev::rgp(n = n, loc = 1, scale = 1, shape = shape) *
-             .rPsite(n = n, j = siteindex, d = d, para = param,
+             .rPsite(n = n, j = siteindex, d = d, par = param,
                      model = mod, Sigma = sigma, loc = coord))
   } else if (riskf %in% c("max", "min", "l2")) {
     ustar <- switch(riskf, max = 1, min = d, l2 = 1)
@@ -224,11 +263,11 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
     samp <- matrix(0, nrow = n, ncol = d)
     while (ind < n) {
       candidate <- mev::rgp(n = nsim, loc = 1, scale = 1, shape = shape) *
-        .rmevspec_cpp(n = nsim, d = d, para = param, model = mod,
+        .rmevspec_cpp(n = nsim, d = d, par = param, model = mod,
                       Sigma = sigma, loc = coord)/ustar
       accept <- switch(riskf,
-                       max = apply(candidate, 1, function(x) { max(x) > 1 }),
-                       min = apply(candidate, 1, function(x) { min(x) > 1 }),
+                       max = apply(candidate, 1, max) > 1,
+                       min = apply(candidate, 1, min) > 1,
                        l2 = apply(candidate, 1, function(x) { sum(x^2) > 1 }))
       sum_accept <- sum(accept)
       ntotacc <- ntotacc + sum_accept
@@ -239,7 +278,7 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
           ind <- ind + sum_accept
           nsim <- min(1e+06, ceiling(1.25 * (nsim/sum_accept) * (n - ind)))
         } else {
-          samp[(ind + 1L):n, ] <- as.matrix(candidate[accept, ])[1:(n - ind), ]
+          samp[(ind + 1L):n, ] <- as.matrix(candidate[accept,,drop = FALSE])[1:(n - ind), ]
           ind <- n
         }
       } else {
@@ -264,7 +303,7 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
 #'
 #' @inheritParams rmev
 #' @param shape shape parameter of the generalized Pareto variable
-#' @param riskf string indicating the risk functional.
+#' @param risk string indicating the risk functional.
 #' @param thresh univariate threshold for the exceedances of risk functional
 #' @param siteindex integer between 1 and d specifying the index of the site or variable
 #' @param scale scale vector
@@ -273,21 +312,55 @@ rparp <- function(n, shape = 1, riskf = c("sum", "site", "max", "min", "l2"),
 #' \code{accept.rate} if the procedure uses rejection sampling.
 #' @export
 #' @examples
-#' rgparp(n = 10, riskf = 'site', siteindex = 2, d = 3, param = 2.5,
+#' rgparp(n = 10, risk = 'site', siteindex = 2, d = 3, param = 2.5,
 #'    model = 'log', scale = c(1, 2, 3), loc = c(2, 3, 4))
-#' rgparp(n = 10, riskf = 'max', d = 4, param = c(0.2, 0.1, 0.9, 0.5),
+#' rgparp(n = 10, risk = 'max', d = 4, param = c(0.2, 0.1, 0.9, 0.5),
 #'    scale = 1:4, loc = 1:4, model = 'bilog')
-#' rgparp(n = 10, riskf = 'sum', d = 3, param = c(0.8, 1.2, 0.6, -0.5),
+#' rgparp(n = 10, risk = 'sum', d = 3, param = c(0.8, 1.2, 0.6, -0.5),
 #'    scale = 1:3, loc = 1:3, model = 'sdir')
 #' vario <- function(x, scale = 0.5, alpha = 0.8){ scale*x^alpha }
 #' grid.coord <- as.matrix(expand.grid(runif(4), runif(4)))
-#' rgparp(n = 10, riskf = 'max', vario = vario, coord = grid.coord,
+#' rgparp(n = 10, risk = 'max', vario = vario, coord = grid.coord,
 #'    model = 'br', scale = runif(16), loc = rnorm(16))
-rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "max", "min", "l2"),
-                   siteindex = NULL, d, loc, scale, param, sigma,
-                   model = c("log", "neglog","bilog", "negbilog", "hr", "br", "xstud", "smith", "schlather", "ct", "sdir", "dirmix"),
-                   weights, vario, coord = NULL, ...) {
-  riskf <- match.arg(riskf)
+rgparp <- function(n,
+                   shape = 1,
+                   thresh = 1,
+                   risk = c("mean",
+                            "sum",
+                            "site",
+                            "max",
+                            "min",
+                            "l2"),
+                   siteindex = NULL,
+                   d,
+                   loc,
+                   scale,
+                   param,
+                   sigma,
+                   model = c("log",
+                             "neglog",
+                             "bilog",
+                             "negbilog",
+                             "hr",
+                             "br",
+                             "xstud",
+                             "smith",
+                             "schlather",
+                             "ct",
+                             "sdir",
+                             "dirmix"),
+                   weights,
+                   vario,
+                   coord = NULL, ...) {
+  ellips <- list(...)
+  if(!is.null(ellips$riskf)){
+    riskf <- ellips$riskf
+  } else{
+    riskf <- risk
+  }
+  riskf <- match.arg(arg = riskf,
+                     choices = c("mean", "sum", "site", "max", "min", "l2"),
+                     several.ok = TRUE)[1]
   #shape <- as.vector(shape[1])
   #stopifnot(is.numeric(shape))
   if (is.null(siteindex) && riskf == "site") {
@@ -460,8 +533,21 @@ rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "m
     coord <- cbind(0)
   }
   # Model
-  mod <- switch(model, log = 1, neglog = 2, dirmix = 3, bilog = 4, negbilog = 4, xstud = 5, br = 6, sdir = 7, smith = 8, hr = 9,
-                isbr = 9)
+  mod <-
+    switch(
+      model,
+      log = 1,
+      neglog = 2,
+      dirmix = 3,
+      bilog = 4,
+      negbilog = 4,
+      xstud = 5,
+      br = 6,
+      sdir = 7,
+      smith = 8,
+      hr = 9,
+      isbr = 9
+    )
   # Additional checks and arguments for accept-reject algorithm for generalized R-Pareto process
   # Scale vector
   if(missing(scale)){
@@ -561,7 +647,7 @@ rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "m
     samp <- matrix(0, nrow = n, ncol = d)
     while (ind < n) {
       candidate <- ustar / runif(nsim) *
-        .rmevspec_cpp(n = nsim, d = d, para = param, model = mod, Sigma = sigma, loc = coord)
+        .rmevspec_cpp(n = nsim, d = d, par = param, model = mod, Sigma = sigma, loc = coord)
         for(j in 1:d){
           if(!isTRUE(all.equal(shape[j], 0))){
           candidate[,j] <- (candidate[,j]^shape[j] - 1) / shape[j] * scale[j] + loc[j]
@@ -585,7 +671,7 @@ rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "m
           ind <- ind + sum_accept
           nsim <- min(1e+06, ceiling(1.25 * (nsim/sum_accept) * (n - ind)))
         } else {
-          samp[(ind + 1L):n, ] <- candidate[accept, ,drop = FALSE][1:(n - ind), , drop = FALSE]
+          samp[(ind + 1L):n, ] <- candidate[accept,, drop = FALSE][1:(n - ind),]
           ind <- n
         }
       } else {
@@ -597,7 +683,7 @@ rgparp <- function(n, shape = 1, thresh = 1, riskf = c("mean", "sum", "site", "m
     return(samp)
   } else {
      #Acceptance rate is 1
-     samp <- ustar / runif(n) * .rPsite(n = n, j = siteindex, d = d, para = param, model = mod, Sigma = sigma, loc = coord)
+     samp <- ustar / runif(n) * .rPsite(n = n, j = siteindex, d = d, par = param, model = mod, Sigma = sigma, loc = coord)
      for(j in 1:d){
      if(!isTRUE(all.equal(shape[j], 0))){
            samp[,j] <- (samp[,j]^shape[j] - 1) / shape[j] * scale[j] +  loc[j]
