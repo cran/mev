@@ -1,6 +1,6 @@
 #' French wind data
 #'
-#' Daily mean wind speed (in km/h) at four stations in the south of France, namely Cap Cépet (\code{S1}), Lyon St-Exupéry (\code{S2}), Marseille Marignane (\code{S3}) and Montélimar (\code{S4}).
+#' Daily mean wind speed (in km/h) at four stations in the south of France, namely Cap Cepet (\code{S1}), Lyon St-Exupery (\code{S2}), Marseille Marignane (\code{S3}) and Montelimar (\code{S4}).
 #' The data includes observations from January 1976 until April 2023; days containing missing values are omitted.
 #' @source European Climate Assessment and Dataset project \url{https://www.ecad.eu/}
 #' @references
@@ -11,12 +11,12 @@
 #' @format A data frame with 17209 observations and 8 variables:
 #' \describe{
 #' \item{\code{date}}{date of measurement}
-#' \item{\code{S1}}{wind speed (in km/h) at Cap Cépet}
-#' \item{\code{S2}}{wind speed (in km/h) at Lyon Saint-Exupéry}
+#' \item{\code{S1}}{wind speed (in km/h) at Cap Cepet}
+#' \item{\code{S2}}{wind speed (in km/h) at Lyon Saint-Exupery}
 #' \item{\code{S3}}{wind speed (in km/h) at Marseille Marignane}
-#' \item{\code{S4}}{wind speed (in km/h) at Montélimar}
-#' \item{\code{H2}}{humidity (in percentage) at Lyon Saint-Exupéry}
-#' \item{\code{T2}}{mean temperature (in degree Celcius) at Lyon Saint-Exupéry}
+#' \item{\code{S4}}{wind speed (in km/h) at Montelimar}
+#' \item{\code{H2}}{humidity (in percentage) at Lyon Saint-Exupery}
+#' \item{\code{T2}}{mean temperature (in degree Celcius) at Lyon Saint-Exupery}
 #' }
 #' The \code{metadata} attribute includes latitude and longitude (in degrees, minutes, seconds), altitude (in m), station name and station id.
 #' @examples
@@ -122,7 +122,7 @@ NULL
 #' Absolute magnitude of 373 geomagnetic storms lasting more than 48h with absolute magnitude (dst) larger than 100 in 1957-2014.
 #'
 #' @source Aki Vehtari
-#' @references World Data Center for Geomagnetism, Kyoto, M. Nose, T. Iyemori, M. Sugiura, T. Kamei (2015), \emph{Geomagnetic Dst index}, doi:10.17593/14515-74000.
+#' @references World Data Center for Geomagnetism, Kyoto, M. Nose, T. Iyemori, M. Sugiura, T. Kamei (2015), \emph{Geomagnetic Dst index}, <doi:10.17593/14515-74000>.
 #' @docType data
 #' @note For a detailed article presenting the derivation of the Dst index, see \code{http://wdc.kugi.kyoto-u.ac.jp/dstdir/dst2/onDstindex.html}
 #' @format a vector of size 373
@@ -137,7 +137,7 @@ NULL
 #' @format a data frame with 15132 rows and two variables
 #' @name abisko
 #' @source Abisko Scientific Research Station
-#' @references A. Kiriliouk, H. Rootzén, J. Segers and J.L. Wadsworth (2019), \emph{Peaks over thresholds modeling With multivariate generalized Pareto distributions},  Technometrics, \bold{61}(1), 123--135, \code{DOI:10.1080/00401706.2018.1462738}
+#' @references A. Kiriliouk, H. Rootzen, J. Segers and J.L. Wadsworth (2019), \emph{Peaks over thresholds modeling with multivariate generalized Pareto distributions},  Technometrics, \bold{61}(1), 123--135, <doi:10.1080/00401706.2018.1462738>
 NULL
 
 #' Nutrient data
