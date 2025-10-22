@@ -1,3 +1,50 @@
+# mev 2.0 (Release date 2025-10-22)
+
+Major release with breaking changes (mostly function names and arguments) for more coherence. Many functions now flagged as deprecated, but changes to the syntax are often backward compatible.
+
+## New:
+
+- All functions producing plot now export objects with associated S3 routines.
+- Stein's weighted generalized Pareto estimator with `fit.wgpd` and suggested weights `Stein_weights`.
+- Multiple shape estimators (Hill, Pickands, moment estimator, generalized quantile) via `fit.shape` and specific routines `shape.hill`, `shape.erm`, `shape.genjack`, `shape.lthill`, `shape.trunhill`, `shape.rbm`, `shape.moment`, `shape.pickands`, `shape.osz`, `shape.genquant` and `shape.vries`.
+- Second order regular variation parameter estimation via `fit.rho` (four estimators available, via `rho.dk`, `rho.fagh`, `rho.gbw` and `rho.ghp`).
+- L-moment estimator for generalized Pareto distribution via `gpd.lmom`.
+- Estimator of tail dependence of Krupskii and Joe (`kjtail`) and through `xdep.eta`.
+- Weissman quantile estimator (`qweissman`)
+- Function `dgeoaniso` for geometric anisotropy, using the parametrization of Rai and Brown (2025)
+- Function `maxstable` for changes of parameters for GEV.
+- Distributions for extended generalized Pareto (d/p/q/r egp), with new models and profile likelihood (`egp.pll`). This also affects the plotting routines. The nomenclature has been modified for argument 'model' in egp.fit, egp.ll and egp.retlev with backward compatibility. 
+- New methods for threshold selection (16 in total) `thselect.alrs`, `thselect.bab`, `thselect.cv`, `theselect.expgqt`, `thselect.gbw`, `thselect.mdps`, `thselect.mrl` (which supersedes `automrl`), `thselect.pec`, `thselect.pickands`, `thselect.rbm`, `thselect.samsee`, 
+- Threshold stability plots for different estimators `tstab.hill`, `tstab.lthill` (with different diagnostics), `tstab.mrl`
+
+## Changes:
+
+- Function `PickandsXU` is deprecated and replaced with `shape.osz`
+- Function `fit.gpd` with method `obre` now returns ordered exceedances and weights.
+- `spunif` now correctly handles missing values.
+- d/p/q/r for `gev` and `gp` now fully vectorized with respect to arguments, including shape parameter
+- `confint.eprof` has an argument for boundary non-regular null distribution (for the most common case). 
+- Breaking changes to `fit.egp`, `egp.retlev`, `tstab.egp`. The former now allows fixed parameters (for profiling).
+- All functions for threshold selection are now named using the prefix `thselect.` Their arguments are somewhat standardized, and they each have distinct plot and print methods with automatic selection.
+- All threshold stability plots now have the same syntax, with prefix `tstab.`
+- Measures of extremal dependence now via functions prefixed with `xdep.`, including `xdep.chi`, `xdep.eta`, `xdep.chibar` and `xdep.asym`. The first three call `taildep`, the last one supersedes `xasym`.
+- Function `lambdadep` deprecated, replaced with `adf` to better comply with current nomenclature.
+- Function `automrl` deprecated in favour of `thselect.mrl`.
+- Function `chibar` removed in favour of `xdep.chibar`.
+- Arguments of `extcoef` for marginal transformation `margtrans` have been modified (backward compatible changes).
+- Function `fit.egp` now includes alternative arguments to select the optimization routine
+- Internal function (exported, but hidden) `jac` has been replaced by `jac_gpd_pareto` to avoid ambiguity
+- Tests for max stability (`maxstabtest`) and independence via score (`scoreindep`) now renamed `test.maxstab` and `test.scoreindep`
+- Change to name `infomat.test` now `thselect.sdinfo`, `vmetric` now `thselect.vmetric`, `W.diag` now `thselect.wseq`, `NC.diag` now `thselect.ncpgp`
+- Arguments of `xasym` modified to make syntax more uniform.
+- Function `mvrnorm` renamed to `rmvnorm`.
+
+## Fixes:
+
+- Function `adf` now allow for values above 1 for bivariate angular dependence function.
+- Function `.infomat` needs not have data argument.
+- Fix generalized Pareto fit with fixed parameters
+
 # mev 1.17  (Release date 2024-07-09)
 
 ## Fixes:
@@ -58,17 +105,17 @@
 
 ## Changes
 
-* Functions W.diag and NC.diag now have S3 plot and print methods
-* Changes to arguments (backward compatible) to xdat throughout
+* Functions `W.diag` and `NC.diag` now have S3 plot and print methods
+* Changes to arguments (backward compatible) to `xdat` throughout
 * Many dependencies used by single functions are now listed in Suggest.
 
 ## Fixes:
 
 * `ext.coef` correctly handles arrays with missing values (reported by M. Jousset)
 * Optimization method in `fit.gev` now uses the PWM solution of Hosking (1985) as starting value
-* `gepll` now returns confidence intervals for param = "quant" (reported by D. Dupuis)
+* `gev.pll` now returns confidence intervals for `param = "quant"` (reported by D. Dupuis)
 * Fixes to NHPP order statistics density (returns -Inf outside of domain, also correctly evaluate for boundary case when xi=-1)
-* Optimization routines `fit.pp`, `fit.gev` and `fit.rlarg` now return correct MLE when solution lies on boundary (xi=-1) and are more robust to failure (gradients for nlminb return large values rather than NAs which caused the algorithm to stop).
+* Optimization routines `fit.pp`, `fit.gev` and `fit.rlarg` now return correct MLE when solution lies on boundary (xi=-1) and are more robust to failure (gradients for `nlminb` return large values rather than `NA` which caused the algorithm to stop).
 * Grimshaw's algorithm sometimes returned incorrect value because of too low tolerance for eta near zero. Set back to default settings.
 * `fit.gpd(..., method = "obre")` now returns additional failure messages if the algorithm drifts towards infeasible values.
 * `rparp` now correctly handles xi=0
@@ -81,49 +128,49 @@
 
 ## Fixes:
 
-* rlarg.infomat incorrect sign for expected information for d=1
-* rmev function did not work for `alog` and `aneglog` (reported by Michael Lalancette)
+* `rlarg.infomat` incorrect sign for expected information for d=1
+* `rmev` function did not work properly for `alog` and `aneglog` (reported by Michael Lalancette)
 * Remove class()!= "matrix due to changes in R 4.0.0
-* egp.retlev now returns invisible object (new ordering and format).
+* `egp.retlev` now returns invisible object (new ordering and format).
 
 ## Changes:
 
-* New S3 methods for objects returned by "fit" routines, for use in "lax" package
+* New S3 methods for objects returned by "fit" routines, for use in `lax` package
 
 # mev 1.12 (Release date: 2019-06-24)
 
 
 ## New:
 
-* Function 'taildep' is multivariate equivalent to 'evd::chiplot'
-* Function 'rparpcs' for simulating from elliptical Pareto processes associated with max
-* 'rgparp' for simulation of generalized R Pareto processes
+* Function `taildep` is multivariate equivalent to `evd::chiplot`
+* Function `rparpcs` for simulating from elliptical Pareto processes associated with max
+* `rgparp` for simulation of generalized R Pareto processes
 * Exponent measure for Brown-Resnick and extremal Student model
-* 'spunif' for semi-parametric transform to uniform (tail modelled using GP)
-* 'rparp' now has attributes to give acceptance rate of accept/reject procedure.
-* Exponent measure estimators 'extcoef'
+* `spunif` for semi-parametric transform to uniform (tail modelled using GP)
+* `rparp` now has attributes to give acceptance rate of accept/reject procedure.
+* Exponent measure estimators `extcoef`
 * New method for robust OBRE estimates of GP parameters
-* Functions 'fit.gev','fit.gpd', 'fit.rlarg' and 'fit.pp' for maximum likelihood estimation
-* Default printing and plot optims (p-p and q-q plots) for mev_ objects
-* Changes to optimization routine for pp  in 'W.diag' function, use of expected information matrix, change to default tuning parameter
-* New datasets: eskrain, maiquetia, nidd, venice, w1500m
+* Functions `fit.gev`, `fit.gpd`, `fit.rlarg` and `fit.pp` for maximum likelihood estimation
+* Default printing and plot optims (p-p and q-q plots) for `mev_` objects
+* Changes to optimization routine for pp  in `W.diag` function, use of expected information matrix, change to default tuning parameter
+* New datasets: `eskrain`, `maiquetia`, `nidd`, `venice`, `w1500m`
 
 ## Fixes:
 
 * Scaling of Brown-Resnick is now consistent with literature (half of semivariogram)
-* Degrees of freedom argument in C++ code for 'rmev' with extremal Student family was incorrect
-* 'rparp' now has a hard bound to ensure the vector of simulated vectors fits in memory.
+* Degrees of freedom argument in C++ code for `rmev` with extremal Student family was incorrect
+* `rparp` now has a hard bound to ensure the vector of simulated vectors fits in memory.
 * Change to Grimshaw routine to ensure shape not less than -1, constrained optimization method
 * Information matrix, score for GEV now interpolated in a neighborhood of zero to preserve continuity and avoid numerical overflow.
 * Information matrix of GEV: scale factor off. All scores and information matrix have been checked and limits as xi -> 0  implemented.
-* ext.index number of exceedances off by one, causing Inf in weight vector for lm (thanks to @MCristinaMiranda). Warnings now silenced by default.
+* `ext.index`: number of exceedances off by one, causing `Inf` in weight vector for `lm` (thanks to @MCristinaMiranda). Warnings now silenced by default.
 
 ## Changes:
 
-* coordinates for rmev, rparp, etc. now use `coord` instead of `loc` to avoid confusion with location parameter in `rgparp`
-* Removed dependency to 'ismev', 'rootsolve' (replaced with 'nleqslv' routine) and 'numDeriv'.
+* coordinates for `rmev`, `rparp`, etc. now use `coord` instead of `loc` to avoid confusion with location parameter in `rgparp`
+* Removed dependency to `ismev`, `rootsolve` (replaced with `nleqslv` routine) and `numDeriv`.
 * Change to plot for profile log-likelihood methods
-* 'smith.penult' function has new arguments (backward compatible). The quantiles 'u' are now returned for Smith penultimate approximations with 'method = "pot"'
+* `smith.penult` function has new arguments (backward compatible). The quantiles `'u'` are now returned for Smith penultimate approximations with `method = "pot"`
 
 
 # mev 1.11 (Release date: 2018-02-23)
@@ -131,34 +178,34 @@
 
 ## New:
 
-* Function 'rparp' for simulation from R-Pareto Processes via rejection sampling
-* Function 'gepll' and 'gpd.pll' for penalized profile likelihood and tangent exponential model approximations
-* New functions 'chibar', 'angextrapo' and 'lambdadep' for bivariate and multivariate model estimation, based on work of Tawn et al.
+* Function `rparp` for simulation from R-Pareto Processes via rejection sampling
+* Function `gev.pll` and `gpd.pll` for penalized profile likelihood and tangent exponential model approximations
+* New functions `chibar`, `angextrapo` and `lambdadep` for bivariate and multivariate model estimation, based on work of Tawn et al.
 * Dirichlet mixture smoothing for empirical angular distribution of de Carvalho et al. (2013)
-* Functions 'gemle' and 'gpd.mle' for maximum likelihood estimates of transformed parameters
-* Functions 'geabias' and 'gpd.abias' for asymptotic bias of block maxima for fixed sample sizes or fixed thresholds
+* Functions `gev.mle` and `gpd.mle` for maximum likelihood estimates of transformed parameters
+* Functions `gev.abias` and `gpd.abias` for asymptotic bias of block maxima for fixed sample sizes or fixed thresholds
 
 ## Changes:
 
-* Functions 'rmev', 'rmevspec', etc. now only accept variogram functions 'vario' that have distance as argument
-* Simulation from 'rmev' and 'rmevspec' faster to refactoring of code
-* Function 'smith.penult' now has a 'family' as argument for specifying distributions via a string
-* Function 'getem' and 'gpd.tem' are now a wrapper for 'gepll' and 'gpd.pll', respectively. Routine should be more robust
+* Functions `rmev`, `rmevspec`, etc. now only accept variogram functions `vario` that have distance as argument
+* Simulation from `rmev` and `rmevspec` now faster due to refactoring of code
+* Function `smith.penult` now has a 'family' as argument for specifying distributions via a string
+* Function `gev.tem` and `gpd.tem` are now wrappers for `gev.pll` and `gpd.pll`, respectively. Routine should be more robust
 * TEM corrections now handle more options
 * Clarifications in the vignette about the asymmetric negative logistic model (thanks to A. Stephenson)
 
 ## Fixes:
 
-* Fixed incorrect scaling in 'infomat.test' (thanks to P. Northrop)
-* Model "br" now simulates from stationary version only if argument 'sigma' is provided, and otherwise samples intrinsically Gaussian processes
-* Display of p-value matrix for 'infomat.test'
+* Fixed incorrect scaling in `infomat.test` (thanks to P. Northrop)
+* Model `"br"` now simulates from stationary version only if argument `'sigma'` is provided, and otherwise samples intrinsically Gaussian processes
+* Display of p-value matrix for `infomat.test`
 
 # mev 1.10 (Release date: 2017-02-01)
 
 
 ## New:
 
-* Added 'negdir' model to `rmev`
+* Added `'negdir'` model to `rmev` families
 * Changes to `angmeas` to include different weighting if the region of interest is 'max' or 'min'
 
 ## Fixes:
@@ -167,7 +214,7 @@
 
 ## Changes:
 
-* Fixed argument matching in function 'egp2'
+* Fixed argument matching in function `fit.egp` with model `egp2`
 
 
 
@@ -181,34 +228,34 @@
 
 ## Changes:
 
-* model "br" is now distinct from "hr"
+* `rmev`, etc.: model `"br"` is now distinct from `"hr"`
 
 ## Fixes:
 
 * fixed invalid random number generation from logistic model for near-independence cases
 
 
-# mev v1.7 (Release date: 2016-06-07)
+# mev 1.7 (Release date: 2016-06-07)
 
 
 ## New:
 
-* ext.index Extremal index estimates based on interexceedance and gap times
-* infomat.test Information matrix test of Suveges and Davison (2010)
+* `ext.index` Extremal index estimates based on interexceedance and gap times
+* `infomat.test` Information matrix test of Suveges and Davison (2010)
 
 ## Fixes:
 
 * fixed an error in the acceptance rate for the `gp.fit` MCMC
 
 
-# mev v1.6.1 (Release date: 2016-03-15)
+# mev 1.6.1 (Release date: 2016-03-15)
 
 
 ## Fixes: 
 
 * fixed an error in the normal sampler (affecting version 1.5 and 1.6). All simulations of Brown-Resnick or extremal-Student were affected by the mistake
 
-# mev v1.6 (Release date: 2016-03-08)
+# mev 1.6 (Release date: 2016-03-08)
 
 
 ## New:
@@ -219,7 +266,7 @@
 
 * `gp.fit` ample changes to the function, in particular a fix for the printing method, handling of errors and inclusion of the Zhang (2010) method and MCMC algorithm for the latter. This function is still preliminary and may updated in the nearby future to include further possibilities.
 
-# mev v1.5 (Release date: 2016-02-16)
+# mev 1.5 (Release date: 2016-02-16)
 
 
 ## New:
@@ -233,34 +280,35 @@
 
 ## Changes: 
 
-* check for marginal mean constraint for the Dirichlet mixture now has tolerance
+* Check for marginal mean constraint for the Dirichlet mixture now has tolerance
 
-# mev v1.3 (Release date: 2015-10-05)
+# mev 1.3 (Release date: 2015-10-05)
 
 
 ## Changes:
 
-* Extremal Dirichlet model now implemented with "ef"
-* Added Smith and asymmetric (negative) logistic model (differs from bivariate setting for aneglog, given that the later is not a valid DF according to Stephenson).
-* rmev can now return arrays for random fields on regular grids ("hr","exstud" and "smith" models).
+* Extremal Dirichlet model now implemented with `"ef"`
+* Added Smith and asymmetric (negative) logistic model (differs from bivariate setting for `aneglog`, given that the later is not a valid DF according to Stephenson).
+* `rmev` can now return arrays for random fields on regular grids (`"hr"`,`"exstud"` and `"smith"` models).
 
 
 
-# mev v1.2 (Release date: 2015-08-23)
+# mev 1.2 (Release date: 2015-08-23)
 
 
 ## Changes:
 
 * Added the negative bilogistic and the scaled Dirichlet models.
-* Extremal Dirichlet model implemented with "sm" only.
+* Extremal Dirichlet model implemented with `"sm"` only.
 
-# mev v1.1 (Release date: 2015-08-19)
+# mev 1.1 (Release date: 2015-08-19)
 
 
 ## Changes:
 
-* Implementation of sampler from spectral distribution, moving rdirspec and rbilogspec to background along with other functions.
-* Fixed a typo in rPextstud setting arguments of newly created arma vector to zero
+* Implementation of sampler from spectral distribution, moving `rdirspec` and `rbilogspec` to internal functions along with other functions.
+* Fixed a typo in `rPextstud` setting arguments of newly created arma vector to zero
 
-mev v1.0 (Release date: 2014-08-16)
+# mev 1.0 (Release date: 2014-08-16)
 
+Initial submission

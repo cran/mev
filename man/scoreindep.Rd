@@ -24,8 +24,4 @@ a list with elements
 \description{
 The Ramos and Ledford (2005) score test of independence is a modification of tests by Tawn (1988) and Ledford and Tawn (1996) for a logistic model parameter \eqn{\alpha=1}; the latter two have scores with zero expectation, but the variance of the score are infinite, which produces non-regularity and yield test, once suitably normalized, that converge slowly to their asymptotic null distribution. The test, designed for bivariate samples, transforms observations to have unit Frechet margins and considers a bivariate censored likelihood approach for the logistic distribution.
 }
-\examples{
-samp <- rmev(n = 1000, d = 2,
-    param = 0.99, model = "log")
-scoreindep(samp, p = 0.9)
-}
+\keyword{internal}

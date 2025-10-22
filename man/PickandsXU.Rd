@@ -9,21 +9,19 @@ PickandsXU(xdat, m)
 \arguments{
 \item{xdat}{vector of observations of length \eqn{n}}
 
-\item{m}{number of largest order statistics \eqn{3 \leq m \leq n}. Choosing \eqn{m = n} amounts to using only the three largest observations in the sample.}
+\item{m}{number of largest order statistics \eqn{3 \leq k \leq n}.}
 }
 \description{
-Given a random sample of exceedances, the estimator
+[Deprecated function]
+Given a random sample of \code{n} exceedances, the estimator
 returns an estimator of the shape parameter or extreme
 value index using a kernel of order 3, based on
-\code{m} largest exceedances of \code{xdat}.
+\code{k} largest exceedances of \code{xdat}. Oorschot et al. (2023) parametrize the model in terms of \eqn{m=n-k}, so that \eqn{m=n} corresponds to using only the three largest observations.
 }
 \details{
 The calculations are based on the recursions provided in Lemma 4.3 of Oorschot et al.
 }
-\examples{
-samp <- rgp(n = 1000, shape = 0.2)
-PickandsXU(samp, m = 3)
-}
 \references{
-Oorschot, J, J. Segers and C. Zhou (2023), Tail inference using extreme U-statistics,  Electron. J. Statist. 17(1): 1113-1159. \doi{10.1214/23-EJS2129}
+Oorschot, J, J. Segers and C. Zhou (2023), Tail inference using extreme U-statistics,  \emph{Electronic Journal of Statistics}, 17(1): 1113-1159. \doi{10.1214/23-EJS2129}
 }
+\keyword{internal}

@@ -18,6 +18,7 @@ W.diag(
   plots = c("LRT", "WN", "PS"),
   UseQuantiles = FALSE,
   changepar = TRUE,
+  transform = TRUE,
   ...
 )
 }
@@ -63,8 +64,8 @@ plots of the requested diagnostics and an invisible list with components
 \item \code{k}: final number of thresholds used
 \item \code{thresh}: threshold selected by the likelihood ratio procedure
 \item \code{qthresh}: quantile level of threshold selected by the likelihood ratio procedure
-\item \code{cthresh}: vector of candidate thresholds
-\item \code{qcthresh}: quantile level of candidate thresholds
+\item \code{thresh0}: vector of candidate thresholds
+\item \code{qthresh0}: quantile level of candidate thresholds
 \item \code{mle.u}: maximum likelihood estimates for the selected threshold
 \item \code{model}: model fitted
 }
@@ -90,7 +91,7 @@ set.seed(123)
 W.diag(xdat = abs(rnorm(5000)), model = 'nhpp',
        k = 30, q1 = 0, plots = "PS")
 W.diag(rexp(1000), model = 'nhpp', k = 20, q1 = 0)
-xbvn <- mvrnorm(n = 6000,
+xbvn <- rmnorm(n = 6000,
                 mu = rep(0, 2),
                 Sigma = cbind(c(1, 0.7), c(0.7, 1)))
 # Transform margins to exponential manually
@@ -110,3 +111,4 @@ Wadsworth, J.L. (2016). Exploiting Structure of Maximum Likelihood Estimators fo
 \author{
 Jennifer L. Wadsworth
 }
+\keyword{internal}

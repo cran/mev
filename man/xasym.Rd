@@ -5,11 +5,11 @@
 \title{Coefficient of extremal asymmetry}
 \usage{
 xasym(
-  data,
-  u = NULL,
+  xdat,
+  qlev = NULL,
   nq = 40,
   qlim = c(0.8, 0.99),
-  method = c("empirical", "emplik"),
+  estimator = c("emp", "elik"),
   confint = c("none", "wald", "bootstrap"),
   level = 0.95,
   B = 999L,
@@ -19,15 +19,15 @@ xasym(
 )
 }
 \arguments{
-\item{data}{an \code{n} by 2 matrix of observations}
+\item{xdat}{an \code{n} by 2 matrix of observations}
 
-\item{u}{vector of probability levels at which to evaluate extremal asymmetry}
+\item{qlev}{vector of quantile levels at which to evaluate extremal asymmetry}
 
 \item{nq}{integer; number of quantiles at which to evaluate the coefficient if \code{u} is \code{NULL}}
 
 \item{qlim}{a vector of length 2 with the probability limits for the quantiles}
 
-\item{method}{string indicating the estimation method, one of \code{empirical} or empirical likelihood (\code{emplik})}
+\item{estimator}{string indicating the estimation method, one of \code{empirical} or empirical likelihood (\code{emplik})}
 
 \item{confint}{string for the method used to derive confidence intervals, either \code{none} (default) or a nonparametric \code{bootstrap}}
 
@@ -57,15 +57,16 @@ This function implements estimators of the bivariate
 }
 \details{
 Let \code{U}, \code{V} be uniform random variables and define the partial extremal dependence coefficients
-\eqn{\varphi_{+}(u) = \Pr(V > U | U > u, V > u)},
-\eqn{\varphi_{-}(u) = \Pr(V < U | U > u, V > u)} and
-\eqn{\varphi_0(u) = \Pr(V = U | U > u, V > u)}
+\deqn{\varphi_{+}(u) = \Pr(V > U \mid U > u, V > u),},
+\deqn{\varphi_{-}(u) = \Pr(V < U \mid U > u, V > u),}
+\deqn{\varphi_0(u) = \Pr(V = U \mid U > u, V > u).}
 Define
 \deqn{ \varphi(u) = \frac{\varphi_{+} - \varphi_{-}}{\varphi_{+} + \varphi_{-}}}
+and the coefficient of extremal asymmetry as \eqn{\varphi = \lim_{u \to 1} \varphi(u)}.
 
 The empirical likelihood estimator, derived for max-stable vectors with unit Frechet margins, is
-\deqn{\frac{\sum_i p_i I(w_i \leq 0.5) - 0.5}{0.5 - 2\sum_i p_i(0.5-w_i) I(w_i \leq 0.5)}}
-where \eqn{p_i} is the empirical likelihood weight for observation \eqn{i} and \eqn{w_i} is the pseudo-angle associated to the first coordinate.
+\deqn{\widehat{\varphi}_{\mathrm{el}} = \frac{\sum_i p_i \mathrm{I}(w_i \leq 0.5) - 0.5}{0.5 - 2\sum_i p_i(0.5-w_i) \mathrm{I}(w_i \leq 0.5)}}
+where \eqn{p_i} is the empirical likelihood weight for observation \eqn{i}, \eqn{\mathrm{I}} is an indicator function and \eqn{w_i} is the pseudo-angle associated to the first coordinate, derived based on exceedances above \eqn{u}.
 }
 \examples{
 \dontrun{
@@ -80,3 +81,4 @@ xasym(samp, method = "emplik")
 \references{
 Semadeni, C. (2020). Inference on the Angular Distribution of Extremes, PhD thesis, EPFL, no. 8168.
 }
+\keyword{internal}

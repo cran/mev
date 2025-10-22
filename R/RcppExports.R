@@ -6,15 +6,33 @@
 #' The function computes the distance between locations, with geometric anisotropy.
 #' The parametrization assumes there is a scale parameter, say \eqn{\sigma}, so that \code{scale}
 #' is the distortion for the second component only. The angle \code{rho} must lie in
-#' \eqn{[-\pi/2, \pi/2]}. The dilation and rotation matrix is 
+#' \eqn{[-\pi/2, \pi/2]}. The dilation and rotation matrix is
 #' \deqn{\left(\begin{matrix} \cos(\rho) & \sin(\rho) \\ - \sigma\sin(\rho) & \sigma\cos(\rho) \end{matrix} \right)}
 #' @param loc a \code{d} by 2 matrix of locations giving the coordinates of a site per row.
 #' @param scale numeric vector of length 1, greater than 1.
 #' @param rho angle for the anisotropy, must be larger than \eqn{\pi/2} in modulus.
 #' @return a \code{d} by \code{d} square matrix of pairwise distance
 #' @export
+#' @keywords internal
 distg <- function(loc, scale, rho) {
     .Call(`_mev_distg`, loc, scale, rho)
+}
+
+#' Distance matrix with geometric anisotropy
+#'
+#' The function computes the distance between locations, with geometric anisotropy.
+#' Consider real parameters \eqn{\theta_1} and \eqn{\theta_2}, and the transformation \eqn{\psi=\arctan(\theta_1/\theta_2)/2} and \eqn{r=1 +\theta_1^2 + \theta_2^2}.
+#' The dilation and rotation matrix is
+#' \deqn{\left(\begin{matrix} \sqrt{r}\cos(\rho) & -\sqrt{r}\sin(\rho) \\ \sin(\rho)/\sqrt{r} & \cos(\rho)/\sqrt{r} \end{matrix} \right).}
+#' The parametrization is convenient for optimization purposes, as the parameter vector is unconstrained
+#' and the transformation has unit Jacobian.
+#' @param loc a \code{d} by 2 matrix of locations giving the coordinates of a site per row.
+#' @param theta numeric vector of length 2, real parameters
+#' @references Rai, K. and Brown, P.E. (2025), A parameter transformation of the anisotropic Matérn covariance function. Canadian Journal of Statistics e11839. \doi{10.1002/cjs.11839}
+#' @return a \code{d} by \code{d} square matrix of pairwise distance
+#' @export
+dgeoaniso <- function(loc, theta) {
+    .Call(`_mev_dgeoaniso`, loc, theta)
 }
 
 .EuclideanWeights <- function(x, mu) {
@@ -66,17 +84,17 @@ rdir <- function(n, alpha, normalize = TRUE) {
 #' @param n sample size
 #' @param mu mean vector. Will set the dimension
 #' @param Sigma a square covariance matrix, of same dimension as \code{mu}.
-#' No sanity check is performed to validate that the matrix is p.s.d., so use at own risk
+#' No sanity check is performed to validate that the matrix is positive definite, so use at own risk
 #' @export
 #' @return an \code{n} sample from a multivariate Normal distribution
 #' @examples
-#' mvrnorm(n=10, mu=c(0,2), Sigma=diag(2))
-mvrnorm <- function(n, mu, Sigma) {
-    .Call(`_mev_mvrnorm`, n, mu, Sigma)
+#' rmnorm(n = 10, mu = c(0,2), Sigma = diag(2))
+rmnorm <- function(n, mu, Sigma) {
+    .Call(`_mev_rmnorm`, n, mu, Sigma)
 }
 
-.mvrnorm_chol <- function(n, mu, Sigma_chol) {
-    .Call(`_mev_mvrnorm_chol`, n, mu, Sigma_chol)
+.rmnorm_chol <- function(n, mu, Sigma_chol) {
+    .Call(`_mev_rmnorm_chol`, n, mu, Sigma_chol)
 }
 
 #' Multivariate Normal distribution sampler (Rcpp version), derived using the eigendecomposition
@@ -89,12 +107,12 @@ mvrnorm <- function(n, mu, Sigma) {
 #' @keywords internal
 #' @return an \code{n} sample from a multivariate Normal distribution
 #'
-.mvrnorm_arma <- function(n, Mu, Xmat, eigen = TRUE) {
-    .Call(`_mev_mvrnorm_arma`, n, Mu, Xmat, eigen)
+.rmnorm_arma <- function(n, Mu, Xmat, eigen = TRUE) {
+    .Call(`_mev_rmnorm_arma`, n, Mu, Xmat, eigen)
 }
 
-.mvrnorm_chol_arma <- function(n, Mu, Chol_Cov) {
-    .Call(`_mev_mvrnorm_chol_arma`, n, Mu, Chol_Cov)
+.rmnorm_chol_arma <- function(n, Mu, Chol_Cov) {
+    .Call(`_mev_rmnorm_chol_arma`, n, Mu, Chol_Cov)
 }
 
 .mvrt <- function(n, scaleMat, dof, loc) {

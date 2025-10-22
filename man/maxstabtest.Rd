@@ -40,16 +40,7 @@ tuples are selected from all possible combinations. The confidence intervals are
 nonparametric bootstrap, by resampling observations with replacement observations for the selected tuples and re-estimating the
 location parameter. The procedure can be computationally intensive as a result.
 }
-\examples{
-\dontrun{
-dat <- mev::rmev(n = 250, d = 100, param = 0.5, model = "log")
-maxstabtest(dat, m = 100)
-maxstabtest(dat, m = 2, nmax = 100)
-dat <- mev::mvrnorm(n = 250, Sigma = diag(0.5, 10) + matrix(0.5, 10, 10), mu = rep(0, 10))
-maxstabtest(dat, m = 2, nmax = 100)
-maxstabtest(dat, m = ncol(dat))
-}
-}
 \references{
 Gabda, D.; Towe, R. Wadsworth, J. and J. Tawn, Discussion of ``Statistical Modeling of Spatial Extremes'' by A. C. Davison, S. A. Padoan and M. Ribatet. \emph{Statist. Sci.} \bold{27} (2012), no. 2, 189--192.
 }
+\keyword{internal}
